@@ -10,7 +10,7 @@
 ## 소개
 
 ### 시스템 구성도
-
+<img src="https://github.com/user-attachments/assets/ae4ceb37-c710-4569-a1a8-6e879bed14b4"/>
 
 ## 정기회의
 일요일 오후 1시
