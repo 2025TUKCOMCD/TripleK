@@ -18,4 +18,5 @@
 |[@taekyeng](https://github.com/taekyeng)|Seongryeol<br/>[@KimSeongRyeol](https://github.com/KimSeongRyeol)|Jinwoo Kim<br/>[@Vacal4123](https://github.com/Vacal4123)|qkrrkdtj<br/>[@qkrrkdtj](https://github.com/qkrrkdtj)|
 
 ## 정기회의
-일요일 오후 1시
+- 금요일 오후 1시
+- 일요일 오후 1시
