@@ -18,7 +18,7 @@
 ### 개발 환경
 <img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white"> <img src="https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white"> <img src="https://img.shields.io/badge/android studio-3DDC84?style=for-the-badge&logo=androidstudio&logoColor=white"> <img src="https://img.shields.io/badge/arduino IDE-00878F?style=for-the-badge&logo=arduino&logoColor=white"> <img src="https://img.shields.io/badge/jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white"> <img src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white"/>
 ### 운용 환경
-<img src="https://img.shields.io/badge/Amazon%20EC2-FF9900?style=for-the-badge&logo=Amazon%20EC2&logoColor=white"> <img src="https://img.shields.io/badge/esp32 Cam-E7352C?style=for-the-badge&logo=espressif&logoColor=white">
+<img src="https://img.shields.io/badge/Amazon%20EC2-FF9900?style=for-the-badge&logo=Amazon%20EC2&logoColor=white"> <img src="https://img.shields.io/badge/esp32 Cam-E7352C?style=for-the-badge&logo=espressif&logoColor=white"> <img src="https://img.shields.io/badge/android-34A853?style=for-the-badge&logo=android&logoColor=white">
 
 ## 팀원
 |<img src="https://avatars.githubusercontent.com/u/174297544?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/73999512?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/87019634?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/149243446?v=4" width="120" height="120"/>
