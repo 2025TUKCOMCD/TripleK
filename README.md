@@ -10,7 +10,7 @@
 <img src="https://github.com/user-attachments/assets/f5ab1d88-60ca-43b8-aa55-065c916bb3a2"/>
 
 ## 시스템 구성도
-<img src="https://github.com/user-attachments/assets/ae4ceb37-c710-4569-a1a8-6e879bed14b4"/>
+<img src="https://github.com/user-attachments/assets/5dca0a6b-a170-4cb5-90f5-2241dc3af5dc"/>
 
 ## 팀원
 |<img src="https://avatars.githubusercontent.com/u/174297544?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/73999512?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/87019634?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/149243446?v=4" width="120" height="120"/>
