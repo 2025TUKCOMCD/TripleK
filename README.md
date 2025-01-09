@@ -23,7 +23,7 @@
 ## 팀원
 |<img src="https://avatars.githubusercontent.com/u/174297544?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/73999512?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/87019634?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/149243446?v=4" width="120" height="120"/>
 |:-:|:-:|:-:|:-:|
-|[@taekyeng](https://github.com/taekyeng)|Seongryeol<br/>[@KimSeongRyeol](https://github.com/KimSeongRyeol)|Jinwoo Kim<br/>[@Vacal4123](https://github.com/Vacal4123)|qkrrkdtj<br/>[@qkrrkdtj](https://github.com/qkrrkdtj)|
+|Taekyeng Kim<br/>[@taekyeng](https://github.com/taekyeng)|Seongryeol<br/>[@KimSeongRyeol](https://github.com/KimSeongRyeol)|Jinwoo Kim<br/>[@Vacal4123](https://github.com/Vacal4123)|qkrrkdtj<br/>[@qkrrkdtj](https://github.com/qkrrkdtj)|
 
 ## 정기회의
 - 금요일 오후 1시
