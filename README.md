@@ -29,7 +29,7 @@
 <img src="https://img.shields.io/badge/esp32 Cam-E7352C?style=for-the-badge&logo=espressif&logoColor=white"> <img src="https://img.shields.io/badge/android-34A853?style=for-the-badge&logo=android&logoColor=white">
 
 ### 회의 도구
-<img src="https://img.shields.io/badge/kakaotalk-FFCD00?style=for-the-badge&logo=kakaotalk&logoColor=white"> <img src="https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white">
+<img src="https://img.shields.io/badge/kakao talk-FFCD00?style=for-the-badge&logo=kakaotalk&logoColor=white"> <img src="https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white">
 
 ## 수행 일정
 <img src="https://github.com/user-attachments/assets/5ecd463e-5147-4638-9ed0-e7b93f1c3a29"/>
