@@ -23,6 +23,9 @@
 ### 운용 환경
 <img src="https://img.shields.io/badge/Amazon%20EC2-FF9900?style=for-the-badge&logo=Amazon%20EC2&logoColor=white"> <img src="https://img.shields.io/badge/esp32 Cam-E7352C?style=for-the-badge&logo=espressif&logoColor=white"> <img src="https://img.shields.io/badge/android-34A853?style=for-the-badge&logo=android&logoColor=white">
 
+## 시스템 구성도
+<img src="https://github.com/user-attachments/assets/5ecd463e-5147-4638-9ed0-e7b93f1c3a29"/>
+
 ## 팀원
 |<img src="https://avatars.githubusercontent.com/u/174297544?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/73999512?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/87019634?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/149243446?v=4" width="120" height="120"/>
 |:-:|:-:|:-:|:-:|
