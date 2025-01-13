@@ -9,11 +9,11 @@
 ## 개발 목표
 <img src="https://github.com/user-attachments/assets/f5ab1d88-60ca-43b8-aa55-065c916bb3a2"/>
 
-## 시퀀스 다이어그램
-<img src="https://github.com/user-attachments/assets/328fee79-6682-48d1-a234-8fa0a78b118b"/>
-
 ## 시스템 구성도
 <img src="https://github.com/user-attachments/assets/5dca0a6b-a170-4cb5-90f5-2241dc3af5dc"/>
+
+## 시퀀스 다이어그램
+<img src="https://github.com/user-attachments/assets/328fee79-6682-48d1-a234-8fa0a78b118b"/>
 
 ## 기술 스택
 ### 개발 언어
