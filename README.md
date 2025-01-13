@@ -13,7 +13,9 @@
 <img src="https://github.com/user-attachments/assets/5dca0a6b-a170-4cb5-90f5-2241dc3af5dc"/>
 
 ## 시퀀스 다이어그램
-<img src="https://github.com/user-attachments/assets/328fee79-6682-48d1-a234-8fa0a78b118b"/>
+<div align='center'>
+  <img src="https://github.com/user-attachments/assets/328fee79-6682-48d1-a234-8fa0a78b118b"/>
+</div>
 
 ## 기술 스택
 ### 개발 언어
