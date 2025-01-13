@@ -7,7 +7,7 @@
 - 카메라를 통해 촬영된 영상을 서버로 전송하여, 위험 요소를 분석 후 피드백에 대한 정보를 제공한다.
 
 ## 개발 목표
-<img src="https://github.com/user-attachments/assets/f5ab1d88-60ca-43b8-aa55-065c916bb3a2"/>
+<img src="https://github.com/user-attachments/assets/4b2325b0-68d7-445d-acd5-2ba239433d90"/>
 
 ## 시스템 구성도
 <img src="https://github.com/user-attachments/assets/5dca0a6b-a170-4cb5-90f5-2241dc3af5dc"/>
