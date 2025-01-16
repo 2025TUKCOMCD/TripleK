@@ -9,10 +9,10 @@
 ## 개발 목표
 <img src="https://github.com/user-attachments/assets/4b2325b0-68d7-445d-acd5-2ba239433d90"/>
 
-## 시스템 구성도
+## 시스템 구성도 (수정 예정)
 <img src="https://github.com/user-attachments/assets/5dca0a6b-a170-4cb5-90f5-2241dc3af5dc"/>
 
-## 시퀀스 다이어그램
+## 시퀀스 다이어그램 (수정 예정)
 <div align='center'>
   <img src="https://github.com/user-attachments/assets/328fee79-6682-48d1-a234-8fa0a78b118b"/>
 </div>
