@@ -13,10 +13,11 @@
 <img src="https://github.com/user-attachments/assets/5dca0a6b-a170-4cb5-90f5-2241dc3af5dc"/>
 
 ## EPIC - PB (작성 예정)
-EPIC
- |-pb
- |-pb
- |-pb
+    EPIC
+     |-pb
+     |-pb
+     |-pb
+     이런 형식으로 작성 예정
 
 ## 시퀀스 다이어그램 (수정 예정)
 <div align='center'>
