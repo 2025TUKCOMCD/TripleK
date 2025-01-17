@@ -12,17 +12,22 @@
 ## 시스템 구성도
 <img src="https://github.com/user-attachments/assets/af854c4f-fcd2-4fea-8d12-217dc5b4257f"/>
 
-## EPIC - PB (작성 예정)
-    EPIC
-     |-pb
-     |-pb
-     |-pb
-     이런 형식으로 작성 예정
-
-## 시퀀스 다이어그램 (수정 예정)
-<div align='center'>
-  <img src="https://github.com/user-attachments/assets/328fee79-6682-48d1-a234-8fa0a78b118b"/>
-</div>
+## EPIC - PB
+    스마트폰
+     ㄴ 시각 장애인이 사용할 수 있는 스마트폰 어플 개발
+     
+    하드웨어
+     ㄴ ESP32 모듈을 이용한 이미지 캡처 및 전송 기능 개발
+     
+    AWS
+     ㄴ MQTT 통신을 위한 AWS 서버 환경 개발
+     
+    제품
+     ㄴ 사용자가 착용하기 위한 스마트 글래스 제작
+     
+    머신러닝
+     |- 객체 인식과 거리 식별을 위한 학습 모델 개발
+     ㄴ 학습 모델을 통한 위험도 분석 알고리즘 개발
 
 ## 기술 스택
 ### 개발 언어
