@@ -9,8 +9,8 @@
 ## 개발 목표
 <img src="https://github.com/user-attachments/assets/4b2325b0-68d7-445d-acd5-2ba239433d90"/>
 
-## 시스템 구성도 (수정 예정)
-<img src="https://github.com/user-attachments/assets/5dca0a6b-a170-4cb5-90f5-2241dc3af5dc"/>
+## 시스템 구성도
+<img src="https://github.com/user-attachments/assets/af854c4f-fcd2-4fea-8d12-217dc5b4257f"/>
 
 ## EPIC - PB (작성 예정)
     EPIC
