@@ -24,6 +24,7 @@ WiFi 연결이 끝나면 ESP32-CAM이 카메라를 통해 캡처된 이미지를
 - [도구] → [보드] → [보드매니저] → 입력창에 <b>esp32</b>를 검색하여 <b>esp32 by Espressif 버전 2.0.17</b> 설치.<br>
 ![image](https://github.com/user-attachments/assets/9c2d11a0-a4b4-4b66-a15f-ad4b1be6ae94)<br>
 - [도구] → [보드] → [esp32] → 커서를 내려 <b>AI Thinker ESP32-CAM</b> 선택.
+- [도구] → [포트] → esp32 보드를 연결한 포트(<i>ex. COMX</i>)를 선택.
   
 ### 2.3 라이브러리 설치
 아두이노 IDE의 라이브러리 매니저를 통해 라이브러리 설치.<br>
