@@ -10,3 +10,12 @@ ESP32-CAM은 처음 실행될 때 **WiFiManager**를 이용해서 AP(Access Poin
 
 ### 1.3 ESP32-CAM의 캡처 기능
 WiFi 연결이 끝나면 ESP32-CAM이 카메라를 통해 캡처된 이미지를 서버에 전송.
+
+## 2. 초기 설정
+### USB 드라이버 설치
+### 아두이노 IDE 설치
+### 라이브러리 설치
+아두이노 IDE의 라이브러리 매니저를 통해 라이브러리 설치<br>
+- [MQTT](https://github.com/256dpi/arduino-mqtt) by Joel Gaehwiler
+- [PubSubClient](https://pubsubclient.knolleary.net/) by Nick O'Leary
+- [WiFiManager](https://github.com/tzapu/WiFiManager) by tzabu
