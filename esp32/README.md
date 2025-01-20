@@ -13,7 +13,10 @@ WiFi 연결이 끝나면 ESP32-CAM이 카메라를 통해 캡처된 이미지를
 
 ## 2. 초기 설정
 ### USB 드라이버 설치
-### 아두이노 IDE 설치
+[다운로드 링크](https://sparks.gogo.co.nz/ch340.html)에 접속하여 <b>Windows CH340 Driver</b>를 다운로드하여 압축을 해제<br>
+<b>CH34x_Install_Windows_v3_4</b>를 실행한 후 INSTALL 버튼을 눌러 설치<br>
+![image](https://github.com/user-attachments/assets/dc43f988-aac0-4dbd-84a0-46ba9b628364)
+### 아두이노 IDE 설치 및 기본 설정
 ### 라이브러리 설치
 아두이노 IDE의 라이브러리 매니저를 통해 라이브러리 설치<br>
 - [MQTT](https://github.com/256dpi/arduino-mqtt) by Joel Gaehwiler
