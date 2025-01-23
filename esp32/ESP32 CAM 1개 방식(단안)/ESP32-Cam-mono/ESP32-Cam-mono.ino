@@ -74,6 +74,23 @@ void connectAWS() {
   Serial.println("=====================\n\n");
 }
 
+void grabImage(){
+  camera_fb_t * fb = esp_camera_fb_get();
+  if(fb != NULL && fb->format == PIXFORMAT_JPEG && fb->len < bufferSize){
+    Serial.print("Image Length: ");
+    Serial.print(fb->len);
+    Serial.print("\t Publish Image: ");
+    bool result = client.publish(ESP32CAM_PUBLISH_TOPIC, (const char*)fb->buf, fb->len);
+    Serial.println(result);
+
+    if(!result){
+      Serial.print("Image not publish");
+    }
+  }
+  esp_camera_fb_return(fb);
+  delay(1000);
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.setDebugOutput(true);
@@ -180,5 +197,6 @@ void setup() {
 }
 
 void loop() {
-  delay(5000);
+  client.loop();
+  if(client.connected()) grabImage();
 }
