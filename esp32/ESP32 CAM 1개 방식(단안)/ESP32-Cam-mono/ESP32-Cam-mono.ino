@@ -1,6 +1,9 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <WiFiManager.h>
+#include <WiFiClientSecure.h>
+#include <MQTTClient.h>
+#include "secret.h"
 
 //
 // WARNING!!! PSRAM IC required for UXGA resolution and high JPEG quality
@@ -33,11 +36,43 @@
 //#define CAMERA_MODEL_DFRobot_Romeo_ESP32S3 // Has PSRAM
 #include "camera_pins.h"
 
-// ===========================
-// Enter your WiFi credentials
-// ===========================
+#define ESP32CAM_PUBLISH_TOPIC "esp32/cam_0"
+
+const int bufferSize = 1024 * 23; // 23552 bytes
+
+WiFiClientSecure net = WiFiClientSecure();
+MQTTClient client = MQTTClient(bufferSize);
 
 void setupLedFlash(int pin);
+
+void connectAWS() {
+  net.setCACert(AWS_CERT_CA);
+  net.setCertificate(AWS_CERT_CRT);
+  net.setPrivateKey(AWS_CERT_PRIVATE);
+
+  // Connect to the MQTT broker on the AWS endpoint we defined earlier
+  client.begin(AWS_IOT_ENDPOINT, 8883, net);
+  client.setCleanSession(true);
+
+  Serial.println("\n\n=====================");
+  Serial.println("Connecting to AWS IOT");
+  Serial.println("=====================\n\n");
+
+  while (!client.connect(THINGNAME)) {
+    Serial.print(".");
+    delay(100);
+  }
+
+  if(!client.connected()){
+    Serial.println("AWS IoT Timeout!");
+    ESP.restart();
+    return;
+  }
+
+  Serial.println("\n\n=====================");
+  Serial.println("AWS IoT Connected!");
+  Serial.println("=====================\n\n");
+}
 
 void setup() {
   Serial.begin(115200);
@@ -140,6 +175,8 @@ void setup() {
   } else {
     Serial.println("Wi-Fi 연결 실패!");
   }
+
+  connectAWS();
 }
 
 void loop() {
