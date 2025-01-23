@@ -91,6 +91,35 @@ void grabImage(){
   delay(1000);
 }
 
+void reconnectAWS() {
+  if (WiFi.status() != WL_CONNECTED) {
+    WiFi.reconnect(); // Wi-Fi 재접속 시도
+
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+      Serial.print(".");
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\nWi-Fi 재연결 성공!");
+    } else {
+      Serial.println("\nWi-Fi 재연결 실패!");
+    }
+  }
+  if (!client.connected()) { // 연결 상태 확인
+    Serial.println("AWS IoT 연결 끊김. 재접속 시도 중...");
+    
+    while (!client.connected()) { // 연결이 복구될 때까지 재시도
+      if (client.connect(THINGNAME)) {
+        Serial.println("AWS IoT 재연결 성공!");
+      } else {
+        Serial.print(".");
+        delay(1000); // 1초 대기 후 재시도
+      }
+    }
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.setDebugOutput(true);
@@ -199,4 +228,5 @@ void setup() {
 void loop() {
   client.loop();
   if(client.connected()) grabImage();
+  else reconnectAWS();
 }
