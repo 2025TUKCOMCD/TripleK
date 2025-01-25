@@ -76,3 +76,59 @@ EC2에 putty 또는 ssh로 접속하여 명령어 입력.
     sudo chmod 644 private.key
     sudo chmod 644 cert.crt
 </details>
+
+<details>
+    <summary>Bridge 구성 파일 설정 후 </summary> 
+
+    # AWS IoT Core ATS 엔드포인트를 받는 명령어, bridge.conf에 적어야 하므로 메모작에 기록
+    aws iot describe-endpoint --endpoint-type iot:Data-ATS
+
+    # bridge.conf 생성하고 작성(아래 bridge.conf 작성 내용 참고해서 작성)
+    sudo nano /etc/mosquitto/conf.d/bridge.conf
+
+    # bridge.conf 작성 완료 후 Mosquitto 재시작
+    sudo service mosquitto restart
+
+<details>
+    <summary>bridge.conf 작성 내용</summary> 
+    그대로 복사해서 붙여놓고 내용 수정하여 사용
+    
+    # ============================================================
+    # Bridge to AWS IOT
+    # ============================================================
+
+    connection awsiot
+
+    address <AWS IoT Core ATS 엔드포인트>:8883
+
+    # Specifying which topics are bridged and in what fashion
+    사용할 토픽을 topic <토픽 명> <in/out/both 중 하나> 1
+    (ex.topic cam_image both 1)
+
+    # Setting protocol version explicitly
+    bridge_protocol_version mqttv311
+    bridge_insecure false
+
+    # Bridge connection name and MQTT client Id, enabling the connection automatically when the broker starts.
+    cleansession true
+    clientid bridgeawsiot
+    start_type automatic
+    notifications false
+    log_type all
+
+    # ============================================================
+    # Certificate based SSL/TLS support
+    # ============================================================
+
+    #Path to the rootCA
+    bridge_cafile /etc/mosquitto/certs/rootCA.pem
+
+    # Path to the PEM encoded client certificate
+    bridge_certfile /etc/mosquitto/certs/cert.crt
+
+    # Path to the PEM encoded client private key
+    bridge_keyfile /etc/mosquitto/certs/private.key
+
+    #END of bridge.conf
+</details>
+</details>
