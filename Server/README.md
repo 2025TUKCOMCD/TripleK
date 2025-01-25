@@ -80,7 +80,7 @@ EC2에 putty 또는 ssh로 접속하여 명령어 입력.
 <details>
     <summary>Bridge 구성 파일 설정 후 </summary> 
 
-    # AWS IoT Core ATS 엔드포인트를 받는 명령어, bridge.conf에 적어야 하므로 메모작에 기록
+    # AWS IoT Core ATS 엔드포인트를 받는 명령어, bridge.conf에 적어야 하므로 메모장에 기록
     aws iot describe-endpoint --endpoint-type iot:Data-ATS
 
     # bridge.conf 생성하고 작성(아래 bridge.conf 작성 내용 참고해서 작성)
