@@ -52,3 +52,16 @@ EC2에 putty 또는 ssh로 접속하여 명령어 입력.
     sudo ./aws/install
 </details>
 </details>
+
+<details>
+    <summary>AWS IoT Core Bridege 설정</summary> 
+
+    aws configure
+    aws iot create-policy --policy-name bridgeMQTT --policy-document '{"Version": "2012-10-17","Statement": [{"Effect": "Allow","Action": "iot:*","Resource": "*"}]}'
+    cd /etc/mosquitto/certs/
+    sudo wget https://www.amazontrust.com/repository/AmazonRootCA1.pem -O rootCA.pem
+    sudo aws iot create-keys-and-certificate --set-as-active --certificate-pem-outfile cert.crt --private-key-outfile private.key --public-key-outfile public.key --region <리전 명>
+    aws iot attach-principal-policy --policy-name bridgeMQTT --principal <certificate ARN>
+    sudo chmod 644 private.key
+    sudo chmod 644 cert.crt
+</details>
