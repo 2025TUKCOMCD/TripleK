@@ -30,3 +30,25 @@ IAM 리소스에서 **역할**을 클릭하고 우측 상단에 역할 생성을
 - 고급 세부 정보 → IAM 인스턴스 프로파일: 2.1에서 설정한 IAM 역할의 이름
 
 ### 2.3 EC2 내부 설정
+EC2에 putty 또는 ssh로 접속하여 명령어 입력.
+
+<details>
+    <summary>기본 패키지 설치</summary> 
+  
+    # 최신 버전의 Mosquitto가 포함된 저장소 목록 및 패키지 목록을 업데이트
+    sudo apt-add-repository ppa:mosquitto-dev/mosquitto-ppa
+    sudo apt-get update
+
+    # Mosquitto Broker, Client 그리고 AWS CLI 설치
+    sudo apt-get install mosquitto
+    sudo apt-get install mosquitto-clients
+    sudo apt install awscli
+<details>
+    <summary>AWS CLI 설치가 안될 경우</summary> 
+
+    sudo apt-get install zip unzip
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+</details>
+</details>
