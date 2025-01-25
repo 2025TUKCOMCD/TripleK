@@ -54,14 +54,25 @@ EC2에 putty 또는 ssh로 접속하여 명령어 입력.
 </details>
 
 <details>
-    <summary>AWS IoT Core Bridege 설정</summary> 
+    <summary>AWS IoT Core Bridge 설정</summary> 
 
+    # 입력 시 나오는 항목 중 Default region name을 제외하고는 모두 비우고 Enter, Default region name에는 현재 EC2의 리전 명 입력(ex. ap-northeast-2)
     aws configure
+    
+    # Bridge에 대한 IAM 정책 설정
     aws iot create-policy --policy-name bridgeMQTT --policy-document '{"Version": "2012-10-17","Statement": [{"Effect": "Allow","Action": "iot:*","Resource": "*"}]}'
+
+    # Mosquitto 디렉토리로 이동 및 Amazon Root CA 인증서 다운
     cd /etc/mosquitto/certs/
     sudo wget https://www.amazontrust.com/repository/AmazonRootCA1.pem -O rootCA.pem
+
+    # 공개 인증서 및 키 생성, 명령어의 마지막 부분에 현재 EC2의 리전 명 입력 / 명령어 입력 시 나오는 문구 중 CertificationARN의 경우 바로 아래 명령어에서 사용하니 메모장에 기록
     sudo aws iot create-keys-and-certificate --set-as-active --certificate-pem-outfile cert.crt --private-key-outfile private.key --public-key-outfile public.key --region <리전 명>
+
+    # IoT 정책을 인증서에 첨부, 바로 위 명령어의 결과로 나온 CertificationARN을 첨부 (ex. arn:aws:iot:<리전 명>:XXXXXX....)
     aws iot attach-principal-policy --policy-name bridgeMQTT --principal <certificate ARN>
+
+    # 권한 설정
     sudo chmod 644 private.key
     sudo chmod 644 cert.crt
 </details>
