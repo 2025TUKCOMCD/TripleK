@@ -100,15 +100,41 @@ fun WifiScanButton() {
     val wifiManager = remember {
         context.getSystemService(Context.WIFI_SERVICE) as WifiManager
     }
-    val scanResults by remember { mutableStateOf<List<ScanResult>>(emptyList()) }
 
-    // 버튼을 클릭하면 Wi-Fi 스캔 결과를 로그에 출력
+    // Android 13 이상이면 NEARBY_WIFI_DEVICES 권한도 필요
+    val requiredPermissions = buildList {
+        add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        add(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.NEARBY_WIFI_DEVICES)
+        }
+    }
+
+    val permissionState = remember { mutableStateOf(false) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        // 모든 권한이 허가되었는지 체크
+        permissionState.value = permissions.all { it.value == true }
+    }
+
+    // 버튼 클릭 시 권한이 없으면 요청 -> 있으면 스캔
     Button(onClick = {
-        // 실제 스캔을 트리거할 수도 있지만,
-        // 단순히 현재 스캔 결과(wifiManager.scanResults)를 확인하는 예시
-        val results = wifiManager.scanResults
-        results.forEach {
-            Log.i("WIFI_RESULT", "SSID: ${it.SSID}, BSSID: ${it.BSSID}")
+        // 1) 권한 체크
+        val hasAllPermissions = requiredPermissions.all { perm ->
+            ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (!hasAllPermissions) {
+            // 2) 아직 권한이 없다면 요청
+            launcher.launch(requiredPermissions.toTypedArray())
+        } else {
+            // 3) 권한이 있으면 Wi-Fi 스캔(ScanResults 확인)
+            val results = wifiManager.scanResults
+            results.forEach {
+                Log.i("WIFI_RESULT", "SSID: ${it.SSID}, BSSID: ${it.BSSID}")
+            }
         }
     }) {
         Text(text = "SCAN Wi-Fi")
