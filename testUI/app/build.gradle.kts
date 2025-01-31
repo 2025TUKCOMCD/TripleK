@@ -70,4 +70,5 @@ dependencies {
 
     // ✅ Groovy 문법("...") → Kotlin DSL 문법("...")
     implementation("androidx.activity:activity-compose:1.8.0")
+    implementation("androidx.compose.material:material-icons-extended")
 }
