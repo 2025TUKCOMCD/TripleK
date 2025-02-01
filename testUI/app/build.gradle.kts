@@ -71,4 +71,7 @@ dependencies {
     // ✅ Groovy 문법("...") → Kotlin DSL 문법("...")
     implementation("androidx.activity:activity-compose:1.8.0")
     implementation("androidx.compose.material:material-icons-extended")
+
+    implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
 }

@@ -46,8 +46,24 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LocationAndWifiScreen(Modifier.padding(innerPadding))
                 }
+                MainScreen()
             }
         }
+    }
+}
+
+@Composable
+fun MainScreen() {
+    // showMqttScreen: true이면 MQTT 관련 화면, false이면 Wi-Fi 연결 화면을 보여줌
+    var showMqttScreen by remember { mutableStateOf(false) }
+
+    // Wi-Fi 연결이 성공하면 호출할 콜백을 전달합니다.
+    if (!showMqttScreen) {
+        // 기존 Wi-Fi 스캔/연결 화면에 onConnected 콜백 추가
+        LocationAndWifiScreen(onConnected = { showMqttScreen = true })
+    } else {
+        // ESP32-CAM의 MQTT 상태를 구독하고, 실시간 데이터를 보여주는 화면
+        MqttScreen()
     }
 }
 
@@ -55,7 +71,7 @@ class MainActivity : ComponentActivity() {
  * 전체 화면: 권한 확인 + Wi-Fi 스캔 버튼 + Wi-Fi 목록 + 선택/연결 로직
  */
 @Composable
-fun LocationAndWifiScreen(modifier: Modifier = Modifier) {
+fun LocationAndWifiScreen(modifier: Modifier = Modifier, onConnected: () -> Unit) {
     val context = LocalContext.current
     var hasPermissions by remember { mutableStateOf(false) }
 
@@ -172,6 +188,9 @@ fun WifiScanAndConnectScreen(modifier: Modifier = Modifier) {
         } else {
             // 연결 성공 후 메시지 표시
             Text(text = "Wi-Fi에 성공적으로 연결되었습니다!")
+            LaunchedEffect(Unit) {
+                onConnected()
+            }
         }
     }
 
