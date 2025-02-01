@@ -41,3 +41,30 @@ def process_image(image_path):
         })
 
     return detected_objects
+
+# 이미지 수신 및 분석 루프
+try:
+    while True:
+        image_files = [f for f in os.listdir(SAVE_DIR) if os.path.isfile(os.path.join(SAVE_DIR, f))]
+
+        for image_file in image_files:
+            image_path = os.path.join(SAVE_DIR, image_file)
+            detected_objects = process_image(image_path)
+
+            if detected_objects:
+                mqtt_message = json.dumps({
+                    "timestamp": datetime.now().isoformat(),
+                    "objects": detected_objects
+                })
+                client.publish(PUB_TOPIC, mqtt_message)
+                print(f"MQTT 전송 완료: {mqtt_message}")
+
+            os.remove(image_path)
+
+        sleep(1)
+except KeyboardInterrupt:
+    print("프로그램 종료")
+finally:
+    client.loop_stop()
+    client.disconnect()
+    print("MQTT 연결 종료됨")
