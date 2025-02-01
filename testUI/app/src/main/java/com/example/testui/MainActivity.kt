@@ -1,10 +1,18 @@
 package com.example.testui
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkRequest
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
+import android.net.wifi.WifiNetworkSpecifier
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -12,6 +20,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.testui.ui.theme.TestUITheme
 
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,188 +44,281 @@ class MainActivity : ComponentActivity() {
         setContent {
             TestUITheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LocationPermissionHandler(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    LocationAndWifiScreen(Modifier.padding(innerPadding))
                 }
             }
         }
     }
 }
 
-@Composable
-fun LocationPermissionHandler(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    var hasLocationPermission by remember { mutableStateOf(false) }
-
-    // 권한 요청 런처
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = { permissions: Map<String, Boolean> ->
-            // FINE_LOCATION 권한이 승인되면 true 로 처리
-            hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
-        }
-    )
-
-    // 최초 진입 시 한 번만 체크
-    LaunchedEffect(Unit) {
-        val fineLocationGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val coarseLocationGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!fineLocationGranted || !coarseLocationGranted) {
-            launcher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        } else {
-            hasLocationPermission = true
-        }
-    }
-
-    // UI
-    Column(modifier = modifier.padding(16.dp)) {
-        if (!hasLocationPermission) {
-            Text(text = "위치 권한이 필요합니다.")
-        } else {
-            Text(text = "위치 권한이 허용되었습니다.")
-            Spacer(modifier = Modifier.height(8.dp))
-            WifiScanButton()
-        }
-    }
-}
-
 /**
- * Start Scan 버튼을 누르면 와이파이 스캔 결과를
- * 목록으로 표시하는 함수
+ * 전체 화면: 권한 확인 + Wi-Fi 스캔 버튼 + Wi-Fi 목록 + 선택/연결 로직
  */
 @Composable
-fun WifiScanButton() {
+fun LocationAndWifiScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val wifiManager = remember {
-        context.getSystemService(Context.WIFI_SERVICE) as WifiManager
-    }
+    var hasPermissions by remember { mutableStateOf(false) }
 
-    // Android 13 이상이면 NEARBY_WIFI_DEVICES 권한도 필요
+    // 위치 권한 및 Android 13 이상의 경우 NEARBY_WIFI_DEVICES 권한 요청
     val requiredPermissions = buildList {
         add(Manifest.permission.ACCESS_COARSE_LOCATION)
         add(Manifest.permission.ACCESS_FINE_LOCATION)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             add(Manifest.permission.NEARBY_WIFI_DEVICES)
         }
     }
 
-    // 실제 스캔 결과를 저장하는 리스트 (Compose 상태)
+    // 권한 요청 런처
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { permissions ->
+            // 모든 권한이 허용되었는지 확인
+            hasPermissions = permissions.all { it.value }
+        }
+    )
+
+    LaunchedEffect(Unit) {
+        val alreadyGranted = requiredPermissions.all { perm ->
+            ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
+        }
+        if (!alreadyGranted) {
+            launcher.launch(requiredPermissions.toTypedArray())
+        } else {
+            hasPermissions = true
+        }
+    }
+
+    if (!hasPermissions) {
+        Column(modifier.padding(16.dp)) {
+            Text(text = "Wi-Fi 스캔 및 연결을 위해 위치 권한이 필요합니다.")
+        }
+    } else {
+        WifiScanAndConnectScreen(modifier = modifier)
+    }
+}
+
+@Composable
+fun WifiScanAndConnectScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val wifiManager = remember { context.getSystemService(Context.WIFI_SERVICE) as WifiManager }
+
+    // 스캔 결과를 저장할 리스트
     val wifiList = remember { mutableStateListOf<ScanResult>() }
 
-    // "Start Scan" 버튼 누를 때마다 필요한 권한이 있는지 확인
-    val permissionState = remember { mutableStateOf(false) }
+    // 선택한 AP (연결 다이얼로그 띄우기 위함)
+    var selectedAp by remember { mutableStateOf<ScanResult?>(null) }
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        // 모든 권한이 허가되었는지 체크
-        permissionState.value = permissions.all { it.value == true }
-    }
+    // 연결 완료 여부 (연결 성공 시 메시지만 표시)
+    var isConnected by remember { mutableStateOf(false) }
 
-    Column {
-        Button(
-            onClick = {
-                // 1) 모든 권한 체크
-                val hasAllPermissions = requiredPermissions.all { perm ->
-                    ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
-                }
-
-                if (!hasAllPermissions) {
-                    // 2) 아직 권한이 없다면 요청
-                    launcher.launch(requiredPermissions.toTypedArray())
-                } else {
-                    // 3) 권한이 있으면 Wi-Fi 스캔(ScanResults 확인)
-                    // 실제로는 wifiManager.startScan() + BroadcastReceiver가 정석이지만,
-                    // 간단히 wifiManager.scanResults를 즉시 가져오는 예시
-                    val results = wifiManager.scanResults
-
-                    // 로그 확인
-                    results.forEach {
-                        Log.i("WIFI_RESULT", "SSID: ${it.SSID}, BSSID: ${it.BSSID}")
+    // BroadcastReceiver 등록: 주변 Wi-Fi 스캔 결과 수신
+    DisposableEffect(context) {
+        val filter = IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                val success = intent?.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false) ?: false
+                if (success) {
+                    // 위치 권한이 있는지 체크한 후 scanResults를 읽음
+                    if (ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        val results = wifiManager.scanResults
+                        wifiList.clear()
+                        wifiList.addAll(results)
+                        Log.d("WiFiScan", "Got scan results: ${results.size}")
+                    } else {
+                        Log.e("WiFiScan", "ACCESS_FINE_LOCATION permission is not granted.")
                     }
-
-                    // UI 갱신
-                    wifiList.clear()
-                    wifiList.addAll(results)
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = "Start Scan")
+            }
         }
+        context.registerReceiver(receiver, filter)
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
+    Column(modifier = modifier.padding(16.dp)) {
+        if (!isConnected) {
+            // 스캔 버튼: 클릭 시 위치 권한이 있는지 확인 후 스캔 시작
+            Button(onClick = {
+                if (ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    wifiManager.startScan()
+                } else {
+                    Log.e("WiFiScan", "위치 권한이 없어 Wi-Fi 스캔을 시작할 수 없습니다.")
+                }
+            }) {
+                Text(text = "Wi-Fi Scan")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // 스캔 결과를 리스트로 표시
-        WifiNetworkList(wifiList = wifiList)
+            Text(text = "검색된 Wi-Fi 목록 (${wifiList.size}개)")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LazyColumn {
+                items(wifiList) { scanResult ->
+                    WifiItem(
+                        scanResult = scanResult,
+                        onClick = { selectedAp = scanResult }
+                    )
+                }
+            }
+        } else {
+            // 연결 성공 후 메시지 표시
+            Text(text = "Wi-Fi에 성공적으로 연결되었습니다!")
+        }
+    }
+
+    // AP 선택 시 연결 다이얼로그 표시
+    selectedAp?.let { ap ->
+        WifiConnectDialog(
+            wifiManager = wifiManager,
+            ap = ap,
+            onDismiss = { selectedAp = null },
+            onSuccessConnect = {
+                isConnected = true
+                selectedAp = null
+            }
+        )
     }
 }
 
-/**
- * 실제로 와이파이 목록(SSID 등)을 LazyColumn 으로 표시하는 컴포저블
- */
 @Composable
-fun WifiNetworkList(wifiList: List<ScanResult>) {
-    LazyColumn {
-        items(wifiList) { scanResult ->
-            WifiListItem(scanResult)
-        }
-    }
-}
-
-/**
- * 단일 ScanResult(와이파이 네트워크)를 표시하는 항목
- */
-@Composable
-fun WifiListItem(scanResult: ScanResult) {
-    // WifiManager.calculateSignalLevel(dbm, 단계 수)
+fun WifiItem(scanResult: ScanResult, onClick: () -> Unit) {
     val level = WifiManager.calculateSignalLevel(scanResult.level, 5)
-    // 0 ~ 4 (총 5단계) 사이의 정수
+    val capabilities = scanResult.capabilities ?: ""
+    val encryption = if (capabilities.contains("WPA") || capabilities.contains("WEP")) {
+        "(보안)"
+    } else {
+        "(오픈)"
+    }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp)
+            .clickable { onClick() }
+            .padding(vertical = 8.dp)
     ) {
-        // Wi-Fi 아이콘
         Icon(
             imageVector = Icons.Filled.Wifi,
-            contentDescription = "Wi-Fi Icon",
+            contentDescription = "Wifi Icon",
             modifier = Modifier.padding(end = 8.dp)
         )
-        // SSID
         Text(
-            text = scanResult.SSID.ifBlank { "(숨김 SSID)" },
-            modifier = Modifier.weight(1f)
+            text = "${scanResult.SSID.ifBlank { "(숨김 SSID)" }} $encryption / 신호 레벨: $level/4"
         )
-        // 신호 레벨 표시
-        Text(text = "Level: $level/4")
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(text = "Welcome $name!", modifier = modifier)
+fun WifiConnectDialog(
+    wifiManager: WifiManager,
+    ap: ScanResult,
+    onDismiss: () -> Unit,
+    onSuccessConnect: () -> Unit
+) {
+    val context = LocalContext.current
+    val isSecure = remember(ap) {
+        ap.capabilities.contains("WPA") || ap.capabilities.contains("WEP")
+    }
+    var password by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Wi-Fi 연결") },
+        text = {
+            Column {
+                Text(text = "네트워크: ${ap.SSID}")
+                if (isSecure) {
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("비밀번호") }
+                    )
+                } else {
+                    Text(text = "오픈 AP: 비밀번호가 필요 없습니다.")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        connectWifiQAndAbove(
+                            context = context,
+                            ssid = ap.SSID,
+                            password = if (isSecure) password else null,
+                            onSuccess = { onSuccessConnect() },
+                            onFail = { Log.e("WifiConnect", "연결에 실패했습니다.") }
+                        )
+                    } else {
+                        Log.d("WifiConnect", "Android 9 이하에서는 WifiConfiguration 방식 필요")
+                    }
+                    onDismiss()
+                }
+            ) {
+                Text(text = "연결")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "취소")
+            }
+        }
+    )
+}
+
+@RequiresApi(Build.VERSION_CODES.Q)
+fun connectWifiQAndAbove(
+    context: Context,
+    ssid: String,
+    password: String?,
+    onSuccess: () -> Unit,
+    onFail: () -> Unit
+) {
+    val specifierBuilder = WifiNetworkSpecifier.Builder()
+        .setSsid(ssid)
+
+    if (!password.isNullOrEmpty()) {
+        specifierBuilder.setWpa2Passphrase(password)
+    }
+
+    val wifiNetworkSpecifier = specifierBuilder.build()
+
+    val networkRequest = NetworkRequest.Builder()
+        .addTransportType(android.net.NetworkCapabilities.TRANSPORT_WIFI)
+        .setNetworkSpecifier(wifiNetworkSpecifier)
+        .build()
+
+    val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+    val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            super.onAvailable(network)
+            connectivityManager.bindProcessToNetwork(network)
+            onSuccess()
+        }
+
+        override fun onUnavailable() {
+            super.onUnavailable()
+            onFail()
+        }
+    }
+
+    connectivityManager.requestNetwork(networkRequest, networkCallback)
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun DefaultPreview() {
     TestUITheme {
-        Greeting("Denis")
+        LocationAndWifiScreen()
     }
 }
