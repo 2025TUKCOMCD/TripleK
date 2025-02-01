@@ -41,3 +41,11 @@ client.on_message = on_message
 # 브로커에 연결
 print("MQTT 브로커에 연결 중...")
 client.connect(BROKER_ADDRESS, PORT, 60)
+
+# MQTT 이벤트 루프 실행
+try:
+    print("이미지 수신 대기 중...")
+    client.loop_forever()
+except KeyboardInterrupt:
+    print("\n프로그램 종료")
+    client.disconnect()
