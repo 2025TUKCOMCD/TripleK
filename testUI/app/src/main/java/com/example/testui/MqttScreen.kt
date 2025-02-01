@@ -7,29 +7,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun MqttScreen() {
     val context = LocalContext.current
-
-    // MQTT 연결 상태 및 실시간 수신 메시지 상태
     var mqttConnected by remember { mutableStateOf(false) }
     val receivedMessages = remember { mutableStateListOf<String>() }
 
-    // MQTT 연결 및 구독 설정 (한번만 실행)
     LaunchedEffect(Unit) {
-        val brokerUri = "tcp://your.mqtt.server.com:1883"  // 실제 MQTT 브로커 주소
+        val brokerUri = "tcp://your.mqtt.server.com:1883"  // 실제 MQTT 브로커 주소로 변경하세요.
         val clientId = "AndroidClient_${System.currentTimeMillis()}"
         val mqttClient = MqttAndroidClient(context, brokerUri, clientId)
-
         val options = MqttConnectOptions().apply {
             isCleanSession = true
         }
-
         try {
             mqttClient.connect(options, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
@@ -64,7 +60,6 @@ fun MqttScreen() {
         }
     }
 
-    // UI: MQTT 연결 대기 또는 실시간 데이터 화면 표시
     if (!mqttConnected) {
         Column(
             modifier = Modifier.fillMaxSize(),
