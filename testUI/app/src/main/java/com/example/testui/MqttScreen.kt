@@ -59,7 +59,7 @@ fun MqttScreen() {
                                 mqttConnected = true
                             }
                         }
-                        "esp32cam/proceeded" -> {
+                        "esp32cam/processed" -> {
                             receivedMessages.add(msg)
                         }
                     }
