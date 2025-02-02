@@ -1,5 +1,6 @@
 package com.example.testui
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,53 +10,71 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.*
-import kotlinx.coroutines.delay
+import org.bouncycastle.util.io.pem.PemObject
+import org.bouncycastle.util.io.pem.PemReader
+import org.json.JSONObject
+import java.io.InputStream
+import java.io.StringReader
+import java.nio.charset.StandardCharsets
+import java.security.KeyFactory
+import java.security.KeyStore
+import java.security.PrivateKey
+import java.security.cert.CertificateFactory
+import java.security.spec.PKCS8EncodedKeySpec
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
 
 @Composable
 fun MqttScreen() {
     val context = LocalContext.current
     var mqttConnected by remember { mutableStateOf(false) }
     val receivedMessages = remember { mutableStateListOf<String>() }
+    var mqttClient: MqttClient? = null
 
     LaunchedEffect(Unit) {
-        val brokerUri = "tcp://your.mqtt.server.com:1883"  // 실제 MQTT 브로커 주소로 변경하세요.
+        val (endpoint, port) = loadConfig(context)
+        val brokerUri = "ssl://${endpoint}:${port}"  // 실제 MQTT 브로커 주소로 변경하세요.
         val clientId = "AndroidClient_${System.currentTimeMillis()}"
-        val mqttClient = MqttAndroidClient(context, brokerUri, clientId)
-        val options = MqttConnectOptions().apply {
-            isCleanSession = true
-        }
+        mqttClient = MqttClient(brokerUri, clientId, null)
         try {
-            mqttClient.connect(options, null, object : IMqttActionListener {
-                override fun onSuccess(asyncActionToken: IMqttToken?) {
-                    mqttClient.subscribe("esp32cam/status", 0)
-                    mqttClient.subscribe("esp32cam/data", 0)
-                    mqttClient.setCallback(object : MqttCallback {
-                        override fun connectionLost(cause: Throwable?) {
-                            mqttConnected = false
-                        }
-                        override fun messageArrived(topic: String?, message: MqttMessage?) {
-                            val msg = message.toString()
-                            when (topic) {
-                                "esp32cam/status" -> {
-                                    if (msg == "connected") {
-                                        mqttConnected = true
-                                    }
-                                }
-                                "esp32cam/data" -> {
-                                    receivedMessages.add(msg)
-                                }
+            mqttClient = MqttClient(brokerUri, MqttClient.generateClientId(), null)
+            val options = MqttConnectOptions().apply {
+                socketFactory = getSocketFactory(context)
+                isAutomaticReconnect = true  // 자동 재연결 활성화
+                isCleanSession = false  // 세션 유지
+            }
+
+            mqttClient?.setCallback(object : MqttCallback {
+                override fun connectionLost(cause: Throwable?) {
+                    mqttClient?.reconnect()  // 연결이 끊어지면 자동 재연결
+                }
+
+                override fun messageArrived(topic: String?, message: MqttMessage?) {
+                    val msg = message.toString()
+                    when (topic) {
+                        "esp32cam/status" -> {
+                            if (msg == "connected") {
+                                mqttConnected = true
                             }
                         }
-                        override fun deliveryComplete(token: IMqttDeliveryToken?) {}
-                    })
+                        "esp32cam/proceeded" -> {
+                            receivedMessages.add(msg)
+                        }
+                    }
                 }
-                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    // 연결 실패 처리 (필요시 재시도 로직 추가)
+
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {
                 }
             })
-        } catch (e: MqttException) {
+
+            mqttClient?.connect(options)
+
+            mqttClient?.subscribe("esp32cam/status", 1)
+            mqttClient?.subscribe("esp32cam/proceeded", 1)
+        }
+        catch (e: MqttException) {
             e.printStackTrace()
         }
     }
@@ -83,4 +102,78 @@ fun MqttScreen() {
             }
         }
     }
+}
+
+/**
+ * AWS IoT Core 설정 파일 로드
+ */
+private fun loadConfig(context: Context): Pair<String, Int> {
+    val assetManager = context.assets
+    val inputStream: InputStream = assetManager.open("certs/aws_config.json")
+    val json = inputStream.bufferedReader().use { it.readText() }
+
+    val jsonObject = JSONObject(json)
+    val endpoint = jsonObject.getString("endpoint")
+    val port = jsonObject.getInt("port")
+
+    return Pair(endpoint, port)
+}
+
+/**
+ * AWS IoT Core 인증서 기반 SSL 설정
+ */
+private fun getSocketFactory(context: Context): javax.net.ssl.SSLSocketFactory {
+    val assetManager = context.assets
+    val cf = CertificateFactory.getInstance("X.509")
+
+    // rootCA.pem 로드
+    val caInput: InputStream = assetManager.open("certs/rootCA.pem")
+    val ca = caInput.use { cf.generateCertificate(it) }
+
+    // cert.crt 로드
+    val certInput: InputStream = assetManager.open("certs/cert.crt")
+    val cert = certInput.use { cf.generateCertificate(it) }
+
+    // private.key 로드 (PEM 포맷 변환 적용)
+    val keyInput: InputStream = assetManager.open("certs/private.key")
+    val privateKey = getPrivateKeyFromPEM(keyInput.readBytes())
+
+    // KeyStore 생성 및 초기화
+    val keyStore = KeyStore.getInstance(KeyStore.getDefaultType()).apply {
+        load(null, null)
+        setCertificateEntry("ca", ca)
+        setCertificateEntry("cert", cert)
+        setKeyEntry("private-key", privateKey, null, arrayOf(cert))
+    }
+
+    // TrustManager 설정 (서버 인증)
+    val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()).apply {
+        init(keyStore)
+    }
+
+    // KeyManager 설정 (클라이언트 인증)
+    val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()).apply {
+        init(keyStore, null)
+    }
+
+    // SSLContext 설정
+    return SSLContext.getInstance("TLS").apply {
+        init(kmf.keyManagers, tmf.trustManagers, null)
+    }.socketFactory
+}
+
+private fun getPrivateKeyFromPEM(pemBytes: ByteArray): PrivateKey {
+    val pemString = String(pemBytes, StandardCharsets.UTF_8)
+    val pemReader = PemReader(StringReader(pemString))
+    val pemObject: PemObject = pemReader.readPemObject()
+    pemReader.close()
+
+    val keyBytes = pemObject.content
+    return convertPKCS1ToPKCS8(keyBytes)
+}
+
+private fun convertPKCS1ToPKCS8(pkcs1Bytes: ByteArray): PrivateKey {
+    val pkcs8Spec = PKCS8EncodedKeySpec(pkcs1Bytes)
+    val keyFactory = KeyFactory.getInstance("RSA")
+    return keyFactory.generatePrivate(pkcs8Spec)
 }
