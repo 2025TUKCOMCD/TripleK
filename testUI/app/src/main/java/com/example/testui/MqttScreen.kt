@@ -60,12 +60,31 @@ fun MqttScreen() {
                             }
                         }
                         "esp32cam/processed" -> {
-                            receivedMessages.add(msg)
+                            try {
+                                val jsonObject = JSONObject(msg)
+                                val objectsArray = jsonObject.getJSONArray("objects")
+                                val sb = StringBuilder()
+                                for (i in 0 until objectsArray.length()) {
+                                    val obj = objectsArray.getJSONObject(i)
+                                    val objectName = obj.getString("object")
+                                    val confidence = obj.getDouble("confidence")
+                                    // 원하는 형식: "person - 0.87"
+                                    sb.append("$objectName - $confidence")
+                                    if (i < objectsArray.length() - 1) {
+                                        sb.append("\n")
+                                    }
+                                }
+                                // 새로운 메시지가 도착할 때마다 기존 메시지 아래에 추가
+                                receivedMessages.add(sb.toString())
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
                     }
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                    // 발행한 메시지의 전달 완료 처리 (필요시 구현)
                 }
             })
 
@@ -88,6 +107,7 @@ fun MqttScreen() {
             Text(text = "MQTT 서버에 연결 중...\nESP32-CAM의 상태 대기 중...")
         }
     } else {
+        // 연결 성공 후 실시간 데이터(채팅 형태) 화면
         Column(
             modifier = Modifier
                 .fillMaxSize()
