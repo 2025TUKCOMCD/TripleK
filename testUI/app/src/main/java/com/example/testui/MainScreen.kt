@@ -86,7 +86,6 @@ fun LocationAndWifiScreen(modifier: Modifier = Modifier, onConnected: () -> Unit
 fun WifiSettingsScreen(modifier: Modifier = Modifier, onConnected: () -> Unit) {
     val context = LocalContext.current
 
-    // Wi-Fi 설정창 열기 버튼을 누르면 시스템의 Wi-Fi 설정 화면으로 전환됩니다.
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -100,7 +99,6 @@ fun WifiSettingsScreen(modifier: Modifier = Modifier, onConnected: () -> Unit) {
             Text(text = "Wi-Fi 설정 열기")
         }
         Spacer(modifier = Modifier.height(16.dp))
-        // 추가된 버튼: ESP32-CAM 웹 페이지 열기
         Button(onClick = {
             openWebPage(context)
         }) {
@@ -108,6 +106,13 @@ fun WifiSettingsScreen(modifier: Modifier = Modifier, onConnected: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = "ESP32-CAM에 연결하려면 Wi-Fi 설정에서 해당 네트워크를 선택하세요.")
+        Spacer(modifier = Modifier.height(16.dp))
+        // 전환 버튼 추가 (사용자가 Wi-Fi 설정을 완료한 후 누르도록)
+        Button(onClick = {
+            onConnected()  // 상태 변경: MqttScreen으로 전환
+        }) {
+            Text(text = "연결 완료 (다음 단계)")
+        }
     }
 }
 
