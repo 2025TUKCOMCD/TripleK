@@ -91,7 +91,7 @@ fun MqttScreen() {
             mqttClient?.connect(options)
 
             mqttClient?.subscribe("esp32cam/status", 1)
-            mqttClient?.subscribe("esp32cam/proceeded", 1)
+            mqttClient?.subscribe("esp32cam/processed", 1)
         }
         catch (e: MqttException) {
             e.printStackTrace()
