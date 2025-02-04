@@ -1,16 +1,14 @@
 package com.example.testui
 
 import android.Manifest
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -102,17 +100,28 @@ fun WifiSettingsScreen(modifier: Modifier = Modifier, onConnected: () -> Unit) {
             Text(text = "Wi-Fi 설정 열기")
         }
         Spacer(modifier = Modifier.height(16.dp))
+        // 추가된 버튼: ESP32-CAM 웹 페이지 열기
+        Button(onClick = {
+            openWebPage(context)
+        }) {
+            Text(text = "ESP32-CAM 웹 페이지 열기")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
         Text(text = "ESP32-CAM에 연결하려면 Wi-Fi 설정에서 해당 네트워크를 선택하세요.")
-
-        // 사용자가 Wi-Fi 설정을 마치고 돌아오면
-        // 연결 여부를 감지하는 추가 로직을 통해 onConnected()를 호출하면 됩니다.
-        // 예시) 만약 연결된 네트워크의 SSID가 ESP32-CAM의 네트워크라면 onConnected()를 호출
     }
 }
 
 // 시스템 Wi-Fi 설정창을 여는 함수
 fun openWifiSettings(context: Context) {
     val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    context.startActivity(intent)
+}
+
+// 추가된 함수: 지정된 웹 페이지 열기 (http://192.168.4.1/)
+fun openWebPage(context: Context) {
+    val webpage = Uri.parse("http://192.168.4.1/")
+    val intent = Intent(Intent.ACTION_VIEW, webpage)
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     context.startActivity(intent)
 }
