@@ -26,7 +26,7 @@
 
 #define ESP32CAM_PUBLISH_TOPIC   "esp32/cam_0"
 
-const int bufferSize = 1024 * 50;
+const int bufferSize = 1024 * 35;
 
 WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(bufferSize);
@@ -104,7 +104,7 @@ void cameraInit() {
   config.xclk_freq_hz = 24000000;  // OV5640은 24MHz 권장
   config.pixel_format = PIXFORMAT_JPEG;
   config.frame_size = FRAMESIZE_VGA;
-  config.jpeg_quality = 2;
+  config.jpeg_quality = 7;
   config.fb_count = 2; // PSRAM 있음
 
   esp_err_t err = esp_camera_init(&config);
@@ -119,7 +119,10 @@ void cameraInit() {
     s->set_vflip(s, 1);  // 이미지 상하 반전 (필요 시)
     s->set_hmirror(s, 1); // 좌우 반전
     s->set_brightness(s, 1);
-    s->set_saturation(s, -2);
+    s->set_saturation(s, 2);
+    s->set_sharpness(s, 2);     // 선명도 증가 (-2 ~ 2) → 윤곽선 더 뚜렷하게
+    s->set_whitebal(s, 1);      // 자동 화이트 밸런스 활성화
+    s->set_awb_gain(s, 1);      // 화이트 밸런스 보정 활성화
   }
 }
 
@@ -134,7 +137,7 @@ void grabImage() {
     Serial.print("Image Length: ");
     Serial.print(fb->len);
     Serial.print("\t Publish Image: ");
-    bool result = client.publish(ESP32CAM_PUBLISH_TOPIC, (const char*)fb->buf, fb->len);
+    bool result = client.publish(ESP32CAM_PUBLISH_TOPIC, (const char*)fb->buf, fb->len, false, 0);
     Serial.println(result);
 
     if (!result) {
