@@ -115,12 +115,17 @@ void loop() {
   if(client.connected()) {
     // 슬레이브에게 신호 전송
     digitalWrite(TRIGGER_PIN, HIGH);
+    
+    // 마스터도 이미지를 캡처하고 AWS로 전송
+    grabImage();
     delay(50); // 슬레이브가 신호를 감지할 시간 제공
     digitalWrite(TRIGGER_PIN, LOW);
 
-    // 마스터도 이미지를 캡처하고 AWS로 전송
-    grabImage();
-
-    delay(5000); // 주기적으로 이미지를 캡처
+    
+    delay(1000); // 주기적으로 이미지를 캡처
+  }
+  else if (!client.connected()) {
+    Serial.println("MQTT 연결 끊김, 재연결 시도...");
+    connectAWS();
   }
 }

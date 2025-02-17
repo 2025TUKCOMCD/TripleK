@@ -114,5 +114,10 @@ void loop() {
   // 마스터 신호 감지
   if (digitalRead(TRIGGER_PIN) == HIGH && client.connected()) {
     grabImage(); // 이미지를 캡처하고 AWS로 전송
+    delay(100);
+  }
+  else if (!client.connected()) {
+    Serial.println("MQTT 연결 끊김, 재연결 시도...");
+    connectAWS();
   }
 }
