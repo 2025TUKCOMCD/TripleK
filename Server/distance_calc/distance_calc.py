@@ -156,7 +156,7 @@ try:
                     # 터미널 출력 포맷 변경
                     print("MQTT 전송 완료:")
                     for item in distances:
-                        print(f"  종류: {item['object']}, 거리: {item['distance_cm']}m")
+                        print(f"  종류: {item['object']}, 거리: {item['distance_cm']}cm")
 
             os.remove(img0_path)
             os.remove(img1_path)
