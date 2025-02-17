@@ -15,7 +15,7 @@ MQTTClient client = MQTTClient(1024 * 23);
 
 void connectAWS() {
   WiFiManager wm;
-  wm.autoConnect("ESP32_Config", "12345678");
+  wm.autoConnect("ESP32_Master_Config", "12345678");
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
