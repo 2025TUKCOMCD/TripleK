@@ -117,15 +117,14 @@ try:
     while True:
         image_files_0 = sorted(os.listdir(SAVE_DIR_0))  # 오른쪽 시야 이미지
         image_files_1 = sorted(os.listdir(SAVE_DIR_1))  # 왼쪽 시야 이미지
-        
-        
+
         if len(image_files_0) > 0 and len(image_files_1) > 0:
             img0_path = os.path.join(SAVE_DIR_0, image_files_0[0])
             img1_path = os.path.join(SAVE_DIR_1, image_files_1[0])
-            
+
             obj0 = process_image(img0_path)
             obj1 = process_image(img1_path)
-            
+
             if obj0 and obj1:
                 matched_objects = match_objects(obj0, obj1)
                 distances = []
@@ -143,8 +142,14 @@ try:
                         "timestamp": datetime.now().isoformat(),
                         "distances": distances
                     })
+
+                    # MQTT로 전송
                     client.publish(PUB_TOPIC, mqtt_message)
-                    print(f"MQTT 전송 완료: {mqtt_message}")
+
+                    # 터미널 출력 포맷 변경
+                    print("MQTT 전송 완료:")
+                    for item in distances:
+                        print(f"  종류: {item['object']}, 거리: {item['distance_cm']}m")
 
             os.remove(img0_path)
             os.remove(img1_path)
