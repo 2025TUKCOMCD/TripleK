@@ -48,8 +48,10 @@ def process_image(image_path):
         print(f"이미지를 로드할 수 없습니다: {image_path}")
         return None
     
-    results = model(image)
+    results = model(image, verbose=False)
     detected_objects = []
+
+    print(f"\n [{image_path}] YOLO 탐지 결과:")
     
     for result in results[0].boxes:
         x1, y1, x2, y2 = map(int, result.xyxy[0])
@@ -60,12 +62,17 @@ def process_image(image_path):
         center_x = (x1 + x2) // 2  # 중심 x 좌표
         center_y = (y1 + y2) // 2  # 중심 y 좌표
 
+        print(f" 감지된 객체: {label}, 신뢰도: {conf:.2f}, 위치: ({center_x}, {center_y})")
+
         detected_objects.append({
             "object": label,
             "confidence": round(conf, 2),
             "x": center_x,
             "y": center_y
         })
+
+    if not detected_objects:
+        print(" 감지된 객체 없음\n")
     
     return detected_objects
 
