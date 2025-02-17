@@ -1,26 +1,34 @@
 import os
 import paho.mqtt.client as mqtt
+from datetime import datetime
 
 # MQTT 설정
-BROKER_ADDRESS = "localhost"
-PORT = 1883
+BROKER_ADDRESS = "localhost"  # MQTT 브로커 주소
+PORT = 1883                                # MQTT 브로커 포트
 TOPICS = ["esp32/cam_0", "esp32/cam_1"]  # ESP32-CAM에서 보내는 토픽
-SAVE_DIR = "./images"
+SAVE_DIRS = {
+    "esp32/cam_0": "./images_0",
+    "esp32/cam_1": "./images_1",
+}
 
 # 디렉토리 생성
-os.makedirs(SAVE_DIR, exist_ok=True)
+for directory in SAVE_DIRS.values():
+    os.makedirs(directory, exist_ok=True)
 
+# 메시지 수신 콜백 함수
 def on_message(client, userdata, msg):
+    print(f"Received message on topic {msg.topic}")
+    print(f"Payload length: {len(msg.payload)} bytes")
     try:
         now = datetime.now()  # 현재 날짜와 시간으로 이미지 저장
-        
-        # 파일 이름 생성 (토픽에 따라 파일명 구분)
-        topic_name = msg.topic.replace("/", "_")
-        image_path = os.path.join(SAVE_DIR, f"{topic_name}_image_{now.strftime('%d%H%M%S_%f')}.jpg")
-        
+        save_dir = SAVE_DIRS.get(msg.topic, "./unknown")
+        if save_dir == "./unknown":
+            os.makedirs(save_dir, exist_ok=True)
+        # 파일 이름 생성
+        image_path = os.path.join(save_dir, f"image_{now.strftime('%d%H%M%S_%f')}.jpg")
         with open(image_path, "wb") as f:
             f.write(msg.payload)  # 메시지 payload를 파일로 저장
-    
+        print(f"이미지 저장 완료: {image_path}\n")
     except Exception as e:
         print(f"이미지를 저장하는 중 오류 발생: {e}")
 
@@ -29,7 +37,7 @@ def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("MQTT 브로커에 연결 성공!")
         for topic in TOPICS:
-            client.subscribe(topic)  # 여러 개의 토픽 구독
+            client.subscribe(topic)
             print(f"토픽 구독: {topic}")
     else:
         print(f"MQTT 브로커에 연결 실패, 코드: {rc}")
