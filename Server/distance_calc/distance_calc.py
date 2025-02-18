@@ -118,7 +118,7 @@ def calculate_distance(disparity):
     """
     if disparity == 0:
         return None  # 분모 0 방지
-    return round((B * f) / disparity, 2)
+    return round((B * f) / (disparity * 100), 2)
 
 try:
     while True:
@@ -141,7 +141,7 @@ try:
                     if distance:
                         distances.append({
                             "object": obj0["object"],
-                            "distance_cm": distance
+                            "distance_m": distance
                         })
 
                 if distances:
@@ -156,7 +156,7 @@ try:
                     # 터미널 출력 포맷 변경
                     print("MQTT 전송 완료:")
                     for item in distances:
-                        print(f"  종류: {item['object']}, 거리: {item['distance_cm']}cm")
+                        print(f"  종류: {item['object']}, 거리: {item['distance_m']}m")
 
             os.remove(img0_path)
             os.remove(img1_path)
