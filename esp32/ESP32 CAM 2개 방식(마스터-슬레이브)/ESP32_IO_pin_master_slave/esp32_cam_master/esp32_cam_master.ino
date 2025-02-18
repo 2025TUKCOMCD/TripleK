@@ -71,7 +71,7 @@ void cameraInit() {
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
   config.frame_size = FRAMESIZE_VGA;
-  config.jpeg_quality = 10;
+  config.jpeg_quality = 7;
   config.fb_count = 2;
 
   if (esp_camera_init(&config) != ESP_OK) {
