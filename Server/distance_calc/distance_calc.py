@@ -122,8 +122,10 @@ def calculate_distance(disparity):
 
 try:
     while True:
-        image_files_0 = sorted(os.listdir(SAVE_DIR_0))  # 오른쪽 시야 이미지
-        image_files_1 = sorted(os.listdir(SAVE_DIR_1))  # 왼쪽 시야 이미지
+        # 오른쪽 시야 이미지
+        image_files_0 = sorted(os.listdir(SAVE_DIR_0), key=lambda f: os.path.getmtime(os.path.join(SAVE_DIR_0, f)), reverse=True)
+        # 왼쪽 시야 이미지
+        image_files_1 = sorted(os.listdir(SAVE_DIR_1), key=lambda f: os.path.getmtime(os.path.join(SAVE_DIR_1, f)), reverse=True)
 
         if len(image_files_0) > 0 and len(image_files_1) > 0:
             img0_path = os.path.join(SAVE_DIR_0, image_files_0[0])
