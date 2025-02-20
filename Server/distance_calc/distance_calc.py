@@ -8,10 +8,10 @@ from ultralytics import YOLO
 import paho.mqtt.client as mqtt
 
 # 카메라 간 거리 (Baseline, B) - 두 카메라 간 거리 (단위: cm)
-B = 10  # cm
+B = 8.6  # cm
 
 # 카메라 초점 거리 (OV2640 기준, 실험을 통해 조정 가능)
-f = 500  # 임의 값, 실제 측정 필요
+f = 550  # 임의 값, 실제 측정 필요
 
 # MQTT 설정
 BROKER_ADDRESS = "localhost"

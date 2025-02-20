@@ -6,16 +6,16 @@
 #include <WiFiManager.h>
 
 // GPIO 설정
-#define TRIGGER_PIN 14  // 슬레이브에게 신호를 보낼 핀
-#define ESP32CAM_PUBLISH_TOPIC "esp32/cam_0"
+#define TRIGGER_PIN 14  // 마스터 신호를 받을 핀
+#define ESP32CAM_PUBLISH_TOPIC "esp32/cam_1"
 
 // AWS 및 MQTT 설정
 WiFiClientSecure net = WiFiClientSecure();
-MQTTClient client = MQTTClient(1024 * 23);
+MQTTClient client = MQTTClient(1024 * 30);
 
 void connectAWS() {
   WiFiManager wm;
-  wm.autoConnect("ESP32_Master_Config", "12345678");
+  wm.autoConnect("ESP32_Config_slave", "12345678");
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -42,7 +42,7 @@ void connectAWS() {
     Serial.println("AWS IoT Timeout!");
     ESP.restart();
   }
-  
+
   Serial.println("\n\n=====================");
   Serial.println("AWS IoT Connected!");
   Serial.println("=====================\n\n");
@@ -77,6 +77,15 @@ void cameraInit() {
   if (esp_camera_init(&config) != ESP_OK) {
     ESP.restart();
   }
+
+  sensor_t *s = esp_camera_sensor_get();
+  if (s->id.PID == OV2640_PID) {
+    s->set_brightness(s, 1);
+    s->set_saturation(s, 2);
+    s->set_sharpness(s, 2);     // 선명도 증가 (-2 ~ 2) → 윤곽선 더 뚜렷하게
+    s->set_whitebal(s, 1);      // 자동 화이트 밸런스 활성화
+    s->set_awb_gain(s, 1);      // 화이트 밸런스 보정 활성화
+  }
 }
 
 void grabImage() {
@@ -87,7 +96,7 @@ void grabImage() {
   }
 
   camera_fb_t *fb = esp_camera_fb_get();
-  if (fb != NULL && fb->format == PIXFORMAT_JPEG && fb->len < 1024 * 23) {
+  if (fb != NULL && fb->format == PIXFORMAT_JPEG && fb->len < 1024 * 30) {
     Serial.print("Image Length: ");
     Serial.print(fb->len);
     Serial.print("\t Publish Image: ");
@@ -103,8 +112,7 @@ void grabImage() {
 
 void setup() {
   Serial.begin(115200);
-  pinMode(TRIGGER_PIN, OUTPUT); // TRIGGER_PIN을 출력으로 설정
-  digitalWrite(TRIGGER_PIN, LOW); // 초기값은 LOW로 설정
+  pinMode(TRIGGER_PIN, INPUT); // TRIGGER_PIN을 입력으로 설정
   cameraInit();
   connectAWS();
 }
@@ -112,17 +120,10 @@ void setup() {
 void loop() {
   client.loop();
 
-  if(client.connected()) {
-    // 슬레이브에게 신호 전송
-    digitalWrite(TRIGGER_PIN, HIGH);
-    
-    // 마스터도 이미지를 캡처하고 AWS로 전송
-    grabImage();
-    delay(50); // 슬레이브가 신호를 감지할 시간 제공
-    digitalWrite(TRIGGER_PIN, LOW);
-
-    
-    delay(1000); // 주기적으로 이미지를 캡처
+  // 마스터 신호 감지
+  if (digitalRead(TRIGGER_PIN) == HIGH && client.connected()) {
+    grabImage(); // 이미지를 캡처하고 AWS로 전송
+    delay(100);
   }
   else if (!client.connected()) {
     Serial.println("MQTT 연결 끊김, 재연결 시도...");
