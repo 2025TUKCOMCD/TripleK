@@ -25,6 +25,9 @@ import java.security.spec.PKCS8EncodedKeySpec
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun ChatBubble(message: String, isUserMessage: Boolean = false) {
