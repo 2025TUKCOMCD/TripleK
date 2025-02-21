@@ -27,6 +27,29 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 
 @Composable
+fun ChatBubble(message: String, isUserMessage: Boolean = false) {
+    val alignment = if (isUserMessage) Alignment.End else Alignment.Start
+    val bubbleColor = if (isUserMessage) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        contentAlignment = alignment
+    ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = bubbleColor
+        ) {
+            Text(
+                text = message,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
 fun MqttScreen() {
     val context = LocalContext.current
     var mqttConnected by remember { mutableStateOf(false) }
@@ -117,7 +140,7 @@ fun MqttScreen() {
             Spacer(modifier = Modifier.height(8.dp))
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(receivedMessages) { msg ->
-                    Text(text = msg)
+                    ChatBubble(message = msg)
                 }
             }
         }
