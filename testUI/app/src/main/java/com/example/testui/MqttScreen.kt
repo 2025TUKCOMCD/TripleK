@@ -31,7 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun ChatBubble(message: String, isUserMessage: Boolean = false) {
-    val alignment = if (isUserMessage) Alignment.End else Alignment.Start
+    val alignment = if (isUserMessage) Alignment.CenterEnd else Alignment.CenterStart
     val bubbleColor = if (isUserMessage) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
 
     Box(
