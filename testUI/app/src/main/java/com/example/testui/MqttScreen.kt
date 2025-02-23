@@ -186,7 +186,7 @@ fun MqttScreen() {
 /**
  * AWS IoT Core 설정 파일 로드
  */
-private fun loadConfig(context: Context): Pair<String, Int> {
+internal fun loadConfig(context: Context): Pair<String, Int> {
     val assetManager = context.assets
     val inputStream: InputStream = assetManager.open("certs/aws_config.json")
     val json = inputStream.bufferedReader().use { it.readText() }
@@ -199,7 +199,7 @@ private fun loadConfig(context: Context): Pair<String, Int> {
 /**
  * AWS IoT Core 인증서 기반 SSL 설정
  */
-private fun getSocketFactory(context: Context): javax.net.ssl.SSLSocketFactory {
+internal fun getSocketFactory(context: Context): javax.net.ssl.SSLSocketFactory {
     val assetManager = context.assets
     val cf = CertificateFactory.getInstance("X.509")
     val caInput: InputStream = assetManager.open("certs/rootCA.pem")
@@ -225,7 +225,7 @@ private fun getSocketFactory(context: Context): javax.net.ssl.SSLSocketFactory {
     }.socketFactory
 }
 
-private fun getPrivateKeyFromPEM(pemBytes: ByteArray): PrivateKey {
+internal fun getPrivateKeyFromPEM(pemBytes: ByteArray): PrivateKey {
     val pemString = String(pemBytes, StandardCharsets.UTF_8)
     val pemReader = PemReader(StringReader(pemString))
     val pemObject: PemObject = pemReader.readPemObject()
@@ -234,7 +234,7 @@ private fun getPrivateKeyFromPEM(pemBytes: ByteArray): PrivateKey {
     return convertPKCS1ToPKCS8(keyBytes)
 }
 
-private fun convertPKCS1ToPKCS8(pkcs1Bytes: ByteArray): PrivateKey {
+internal fun convertPKCS1ToPKCS8(pkcs1Bytes: ByteArray): PrivateKey {
     val pkcs8Spec = PKCS8EncodedKeySpec(pkcs1Bytes)
     val keyFactory = KeyFactory.getInstance("RSA")
     return keyFactory.generatePrivate(pkcs8Spec)
