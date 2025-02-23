@@ -1,6 +1,8 @@
 package com.example.testui
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,10 +26,10 @@ import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.cert.CertificateFactory
 import java.security.spec.PKCS8EncodedKeySpec
+import java.util.Locale
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
-import java.util.Locale
 
 @Composable
 fun ChatBubble(message: String, isUserMessage: Boolean = false) {
@@ -119,7 +121,13 @@ fun MqttScreen() {
                                         sb.append("\n")
                                     }
                                 }
-                                receivedMessages.add(sb.toString())
+                                val finalMsg = sb.toString()
+                                // UI에 메시지 추가
+                                receivedMessages.add(finalMsg)
+                                // 메인 스레드에서 TTS로 자동 읽기 (QUEUE_ADD: 이전 발화가 끝난 후 순서대로 읽음)
+                                Handler(Looper.getMainLooper()).post {
+                                    tts?.speak(finalMsg, TextToSpeech.QUEUE_ADD, null, "msg_${System.currentTimeMillis()}")
+                                }
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
@@ -127,7 +135,9 @@ fun MqttScreen() {
                     }
                 }
 
-                override fun deliveryComplete(token: IMqttDeliveryToken?) {}
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                    // 발행한 메시지의 전달 완료 처리 (필요시 구현)
+                }
             })
 
             mqttClient?.connect(options)
@@ -169,17 +179,6 @@ fun MqttScreen() {
                 steps = 3,
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            // 모든 메시지를 TTS로 읽는 버튼
-            Button(
-                onClick = {
-                    val allMessages = receivedMessages.joinToString(separator = ". ")
-                    tts?.speak(allMessages, TextToSpeech.QUEUE_FLUSH, null, "allMessages")
-                },
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-                Text(text = "모든 메시지 읽기")
-            }
         }
     }
 }
