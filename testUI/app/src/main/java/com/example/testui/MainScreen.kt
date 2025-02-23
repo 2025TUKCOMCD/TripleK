@@ -5,18 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.net.wifi.ScanResult
-import android.net.wifi.WifiManager
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,23 +17,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import org.eclipse.paho.client.mqttv3.*
 
+// MainScreen: 두 상태(연결 전/후)에 따라 화면을 전환함
 @Composable
 fun MainScreen() {
-    // showMqttScreen: true이면 MQTT 관련 화면, false이면 Wi-Fi 설정 화면을 보여줌
     var showMqttScreen by remember { mutableStateOf(false) }
 
     if (!showMqttScreen) {
-        // Wi-Fi 연결(설정) 화면에서 연결이 완료되면 onConnected 콜백을 통해 MQTT 화면으로 전환
-        LocationAndWifiScreen(onConnected = { showMqttScreen = true })
+        // 백그라운드에서 MQTT "connected" 상태 감지 시작
+        MqttStatusListener(onConnected = { showMqttScreen = true })
+        // Wi‑Fi 및 웹 페이지 연결 화면 표시
+        LocationAndWifiScreen()
     } else {
-        // MQTT 화면: ESP32-CAM의 상태 및 실시간 데이터를 수신 (MqttScreen.kt에서 구현)
+        // MQTT 연결되면 바로 MqttScreen으로 전환
         MqttScreen()
     }
 }
 
 @Composable
-fun LocationAndWifiScreen(modifier: Modifier = Modifier, onConnected: () -> Unit) {
+fun LocationAndWifiScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var hasPermissions by remember { mutableStateOf(false) }
 
@@ -77,13 +73,13 @@ fun LocationAndWifiScreen(modifier: Modifier = Modifier, onConnected: () -> Unit
             Text(text = "Wi-Fi 설정을 위해 위치 권한이 필요합니다.")
         }
     } else {
-        // Wi-Fi 스캔 및 연결 기능 대신, 시스템 Wi-Fi 설정 창을 여는 화면으로 변경
-        WifiSettingsScreen(onConnected = onConnected)
+        // 버튼을 2개만 표시하는 Wi-Fi 설정 화면 호출
+        WifiSettingsScreen()
     }
 }
 
 @Composable
-fun WifiSettingsScreen(modifier: Modifier = Modifier, onConnected: () -> Unit) {
+fun WifiSettingsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
 
     Column(
@@ -93,26 +89,15 @@ fun WifiSettingsScreen(modifier: Modifier = Modifier, onConnected: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = {
-            openWifiSettings(context)
-        }) {
+        Button(onClick = { openWifiSettings(context) }) {
             Text(text = "Wi-Fi 설정 열기")
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            openWebPage(context)
-        }) {
+        Button(onClick = { openWebPage(context) }) {
             Text(text = "ESP32-CAM 웹 페이지 열기")
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = "ESP32-CAM에 연결하려면 Wi-Fi 설정에서 해당 네트워크를 선택하세요.")
-        Spacer(modifier = Modifier.height(16.dp))
-        // 전환 버튼 추가 (사용자가 Wi-Fi 설정을 완료한 후 누르도록)
-        Button(onClick = {
-            onConnected()  // 상태 변경: MqttScreen으로 전환
-        }) {
-            Text(text = "연결 완료 (다음 단계)")
-        }
     }
 }
 
@@ -123,7 +108,7 @@ fun openWifiSettings(context: Context) {
     context.startActivity(intent)
 }
 
-// 추가된 함수: 지정된 웹 페이지 열기 (http://192.168.4.1/)
+// 지정된 웹 페이지 (http://192.168.4.1/) 열기 함수
 fun openWebPage(context: Context) {
     val webpage = Uri.parse("http://192.168.4.1/")
     val intent = Intent(Intent.ACTION_VIEW, webpage)
@@ -131,24 +116,45 @@ fun openWebPage(context: Context) {
     context.startActivity(intent)
 }
 
-/* 기존 WifiItem(), WifiConnectDialog(), connectWifiQAndAbove() 등은 더 이상 사용하지 않거나,
-   시스템 설정창으로 전환하므로 삭제하거나 별도로 보관할 수 있습니다. */
+// MQTT "connected" 상태를 백그라운드에서 감지하여 onConnected 콜백 실행
 @Composable
-fun WifiItem(scanResult: ScanResult, onClick: () -> Unit) {
-    val level = WifiManager.calculateSignalLevel(scanResult.level, 5)
-    val capabilities = scanResult.capabilities ?: ""
-    val encryption = if (capabilities.contains("WPA") || capabilities.contains("WEP")) "(보안)" else "(오픈)"
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 8.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Wifi,
-            contentDescription = "Wifi Icon",
-            modifier = Modifier.padding(end = 8.dp)
-        )
-        Text(text = "${scanResult.SSID.ifBlank { "(숨김 SSID)" }} $encryption / 신호 레벨: $level/4")
+fun MqttStatusListener(onConnected: () -> Unit) {
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        var mqttClient: MqttClient? = null
+        try {
+            // loadConfig()와 getSocketFactory()는 MqttScreen.kt에 정의되어 있음 (또는 공용 함수로 이동)
+            val (endpoint, port) = loadConfig(context)
+            val brokerUri = "ssl://${endpoint}:${port}"
+            val clientId = "AndroidClient_Main_${System.currentTimeMillis()}"
+            mqttClient = MqttClient(brokerUri, clientId, null)
+            val options = MqttConnectOptions().apply {
+                socketFactory = getSocketFactory(context)
+                isAutomaticReconnect = true
+                isCleanSession = false
+            }
+            mqttClient.setCallback(object : MqttCallback {
+                override fun connectionLost(cause: Throwable?) {
+                    // 필요 시 재연결 처리
+                }
+                override fun messageArrived(topic: String?, message: MqttMessage?) {
+                    if (topic == "esp32cam/status" && message.toString() == "connected") {
+                        onConnected()
+                    }
+                }
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {}
+            })
+            mqttClient.connect(options)
+            mqttClient.subscribe("esp32cam/status", 1)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        onDispose {
+            try {
+                mqttClient?.disconnect()
+            } catch (e: Exception) {
+                // 예외 무시
+            }
+        }
     }
 }
