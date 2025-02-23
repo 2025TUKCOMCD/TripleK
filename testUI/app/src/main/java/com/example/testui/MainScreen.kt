@@ -17,30 +17,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import org.eclipse.paho.client.mqttv3.*
 
-// MainScreen: 두 상태(연결 전/후)에 따라 화면을 전환함
 @Composable
 fun MainScreen() {
-    var showMqttScreen by remember { mutableStateOf(false) }
-
-    if (!showMqttScreen) {
-        // 백그라운드에서 MQTT "connected" 상태 감지 시작
-        MqttStatusListener(onConnected = { showMqttScreen = true })
-        // Wi‑Fi 및 웹 페이지 연결 화면 표시
-        LocationAndWifiScreen()
-    } else {
-        // MQTT 연결되면 바로 MqttScreen으로 전환
-        MqttScreen()
-    }
-}
-
-@Composable
-fun LocationAndWifiScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    var hasPermissions by remember { mutableStateOf(false) }
 
-    // 위치 권한 및 Android 13 이상에서는 NEARBY_WIFI_DEVICES 권한 요청
+    // 단일 MQTT 클라이언트(매니저) 생성
+    val mqttManager = remember { MqttManager(context) }
+
+    // MQTT 연결 시도 (이미 연결되어 있으면 재시도하지 않음)
+    LaunchedEffect(Unit) {
+        mqttManager.connect()
+    }
+
+    var hasPermissions by remember { mutableStateOf(false) }
     val requiredPermissions = buildList {
         add(Manifest.permission.ACCESS_COARSE_LOCATION)
         add(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -69,12 +59,16 @@ fun LocationAndWifiScreen(modifier: Modifier = Modifier) {
     }
 
     if (!hasPermissions) {
-        Column(modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Wi-Fi 설정을 위해 위치 권한이 필요합니다.")
         }
     } else {
-        // 버튼을 2개만 표시하는 Wi-Fi 설정 화면 호출
-        WifiSettingsScreen()
+        // MQTT 연결 상태에 따라 Wi‑Fi 설정 화면 또는 MQTT 메시지 화면을 표시
+        if (!mqttManager.mqttConnected) {
+            WifiSettingsScreen()
+        } else {
+            MqttScreen(mqttManager)
+        }
     }
 }
 
@@ -101,60 +95,15 @@ fun WifiSettingsScreen(modifier: Modifier = Modifier) {
     }
 }
 
-// 시스템 Wi-Fi 설정창을 여는 함수
 fun openWifiSettings(context: Context) {
     val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     context.startActivity(intent)
 }
 
-// 지정된 웹 페이지 (http://192.168.4.1/) 열기 함수
 fun openWebPage(context: Context) {
     val webpage = Uri.parse("http://192.168.4.1/")
     val intent = Intent(Intent.ACTION_VIEW, webpage)
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     context.startActivity(intent)
-}
-
-// MQTT "connected" 상태를 백그라운드에서 감지하여 onConnected 콜백 실행
-@Composable
-fun MqttStatusListener(onConnected: () -> Unit) {
-    val context = LocalContext.current
-    DisposableEffect(Unit) {
-        var mqttClient: MqttClient? = null
-        try {
-            // loadConfig()와 getSocketFactory()는 MqttScreen.kt에 정의되어 있음 (또는 공용 함수로 이동)
-            val (endpoint, port) = loadConfig(context)
-            val brokerUri = "ssl://${endpoint}:${port}"
-            val clientId = "AndroidClient_Main_${System.currentTimeMillis()}"
-            mqttClient = MqttClient(brokerUri, clientId, null)
-            val options = MqttConnectOptions().apply {
-                socketFactory = getSocketFactory(context)
-                isAutomaticReconnect = true
-                isCleanSession = false
-            }
-            mqttClient.setCallback(object : MqttCallback {
-                override fun connectionLost(cause: Throwable?) {
-                    // 필요 시 재연결 처리
-                }
-                override fun messageArrived(topic: String?, message: MqttMessage?) {
-                    if (topic == "esp32cam/status" && message.toString() == "connected") {
-                        onConnected()
-                    }
-                }
-                override fun deliveryComplete(token: IMqttDeliveryToken?) {}
-            })
-            mqttClient.connect(options)
-            mqttClient.subscribe("esp32cam/status", 1)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        onDispose {
-            try {
-                mqttClient?.disconnect()
-            } catch (e: Exception) {
-                // 예외 무시
-            }
-        }
-    }
 }
