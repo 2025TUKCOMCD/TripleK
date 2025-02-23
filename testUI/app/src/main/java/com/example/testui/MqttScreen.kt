@@ -114,9 +114,10 @@ fun MqttScreen() {
                                 val sb = StringBuilder()
                                 for (i in 0 until objectsArray.length()) {
                                     val obj = objectsArray.getJSONObject(i)
-                                    val objectName = obj.getString("object")
-                                    val confidence = obj.getDouble("confidence")
-                                    sb.append("$objectName - $confidence")
+                                    val label = obj.getString("label")
+                                    val distance = obj.getDouble("distance")
+                                    val riskLevel = obj.getString("risk_level")
+                                    sb.append("$label $distance $riskLevel")
                                     if (i < objectsArray.length() - 1) {
                                         sb.append("\n")
                                     }
