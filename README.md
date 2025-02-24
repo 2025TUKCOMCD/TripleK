@@ -49,7 +49,7 @@
 ## <img src="https://github.com/user-attachments/assets/c83ffd47-5d65-46ea-a17f-c92df7e5900e" width=2.5% /> 수행 일정
 <img src="https://github.com/user-attachments/assets/5ecd463e-5147-4638-9ed0-e7b93f1c3a29"/>
 
-## <img src="https://github.com/user-attachments/assets/cde8479e-6052-457b-a7aa-24a098477e14" width=2.5% />팀원
+## <img src="https://github.com/user-attachments/assets/cde8479e-6052-457b-a7aa-24a098477e14" width=2.5% /> 팀원
 |<img src="https://avatars.githubusercontent.com/u/174297544?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/73999512?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/87019634?v=4" width="120" height="120"/>|<img src="https://avatars.githubusercontent.com/u/149243446?v=4" width="120" height="120"/>
 |:-:|:-:|:-:|:-:|
 |Taekyeng Kim<br/>[@taekyeng](https://github.com/taekyeng)|Seongryeol<br/>[@KimSeongRyeol](https://github.com/KimSeongRyeol)|Jinwoo Kim<br/>[@Vacal4123](https://github.com/Vacal4123)|qkrrkdtj<br/>[@qkrrkdtj](https://github.com/qkrrkdtj)|
