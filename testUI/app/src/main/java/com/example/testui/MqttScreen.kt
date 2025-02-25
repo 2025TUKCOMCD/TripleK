@@ -73,6 +73,19 @@ fun MqttScreen(mqttManager: MqttManager) {
             Text(text = "MQTT 서버에 연결 중...\nESP32-CAM의 상태 대기 중...")
         }
     } else {
+        // 마지막 메시지에 대해 TTS speak 호출
+        val lastMessage = mqttManager.receivedMessages.lastOrNull()
+        LaunchedEffect(lastMessage) {
+            lastMessage?.let { msg ->
+                tts?.speak(
+                    msg,
+                    TextToSpeech.QUEUE_FLUSH, // 기존 TTS 음성을 지우고 최신 메시지로 대체
+                    null,
+                    "msg_${System.currentTimeMillis()}"
+                )
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -83,15 +96,6 @@ fun MqttScreen(mqttManager: MqttManager) {
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(mqttManager.receivedMessages) { msg ->
                     ChatBubble(message = msg)
-                    // 새로운 메시지가 들어올 때마다 TTS로 읽기
-                    LaunchedEffect(msg) {
-                        tts?.speak(
-                            msg,
-                            TextToSpeech.QUEUE_ADD,
-                            null,
-                            "msg_${System.currentTimeMillis()}"
-                        )
-                    }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
