@@ -54,6 +54,6 @@
 |:-:|:-:|:-:|:-:|
 |Taekyeng Kim<br/>[@taekyeng](https://github.com/taekyeng)|Seongryeol<br/>[@KimSeongRyeol](https://github.com/KimSeongRyeol)|Jinwoo Kim<br/>[@Vacal4123](https://github.com/Vacal4123)|qkrrkdtj<br/>[@qkrrkdtj](https://github.com/qkrrkdtj)|
 
-## 정기회의
+## <img src="https://github.com/user-attachments/assets/ad0f73b2-5594-4a3d-bddb-38f5ffe1b15d" width=2.5% /> 정기회의
 - 금요일 오후 1시
 - 일요일 오후 1시
