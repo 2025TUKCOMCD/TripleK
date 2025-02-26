@@ -10,8 +10,7 @@
 <img src="https://github.com/user-attachments/assets/4b2325b0-68d7-445d-acd5-2ba239433d90"/>
 
 ## <img src="https://github.com/user-attachments/assets/756b5a0c-f51f-4283-ad03-032790bd6033" width=2.5% /> 시스템 구성도
-<img src="https://github.com/user-attachments/assets/2430b11d-46cb-4731-90ee-09ede2ba84ec"/>
-
+<img src="https://github.com/user-attachments/assets/d116d276-7fc4-4c53-8647-acda7603ded9" width=2500 />
 
 ## <img src="https://github.com/user-attachments/assets/47f480e2-185c-498c-85f1-641acc3bd81f" width=2% /> EPIC - PB
     스마트폰
