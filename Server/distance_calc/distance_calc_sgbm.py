@@ -50,6 +50,7 @@ def connect_mqtt():
 
 def publish_message(client, topic, message):
     """MQTT 메시지 전송"""
+    client.publish(STATUS_TOPIC, "connected")
     client.publish(topic, json.dumps(message))
 
 def get_latest_images():
