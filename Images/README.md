@@ -30,7 +30,7 @@
 </details>
 <details>
     <summary>2025년 2월 19일</summary> 
-    17시37분. 이미지 76장 업로드, 현재 총 개수 = 561장
+    19시30분. 이미지 76장 업로드, 현재 총 개수 = 561장
 </details>
 <details>
     <summary>2025년 3월 6일</summary> 
