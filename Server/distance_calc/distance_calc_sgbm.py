@@ -7,10 +7,10 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 from ultralytics import YOLO
 
-# 카메라 간 거리 (Baseline, B) - 단위: cm
-B = 5  # 예시: 5cm
-# 카메라 초점 거리 (픽셀 단위, 실제 측정 필요)
-f = 500  # 예시 값
+# 카메라 간 거리 (Baseline, B) - 6cm로 조정
+B = 6  # cm
+# 카메라 초점 거리 (픽셀 단위, 측정 필요)
+f = 500  # 예시 값 (실제 조정 필요)
 
 # MQTT 설정
 BROKER_ADDRESS = "localhost"
@@ -27,17 +27,17 @@ os.makedirs(SAVE_DIR_1, exist_ok=True)
 # YOLO 모델 로드
 model = YOLO("yolo11m.pt")
 
-# StereoSGBM 객체 생성
+# StereoSGBM 설정 최적화
 stereo = cv2.StereoSGBM_create(
     minDisparity=0,
-    numDisparities=16 * 5,
-    blockSize=5,
-    P1=8 * 3 * 5**2,
-    P2=32 * 3 * 5**2,
+    numDisparities=16 * 8,
+    blockSize=7,
+    P1=8 * 3 * 7**2,
+    P2=32 * 3 * 7**2,
     disp12MaxDiff=1,
-    uniquenessRatio=10,
-    speckleWindowSize=100,
-    speckleRange=32
+    uniquenessRatio=15,
+    speckleWindowSize=50,
+    speckleRange=16
 )
 
 def connect_mqtt():
@@ -55,13 +55,34 @@ def publish_message(client, topic, message):
 
 def get_latest_images():
     """디렉토리에서 가장 최신 이미지를 선택"""
-    image_files_0 = sorted(os.listdir(SAVE_DIR_0), key=lambda f: -os.path.getmtime(os.path.join(SAVE_DIR_0, f)))
-    image_files_1 = sorted(os.listdir(SAVE_DIR_1), key=lambda f: -os.path.getmtime(os.path.join(SAVE_DIR_1, f)))
+    try:
+        # 폴더 내 파일 목록 가져오기 (비어있으면 빈 리스트 반환)
+        image_files_0 = sorted(
+            [f for f in os.listdir(SAVE_DIR_0) if os.path.isfile(os.path.join(SAVE_DIR_0, f))], 
+            key=lambda f: -os.path.getmtime(os.path.join(SAVE_DIR_0, f))
+        )
+        image_files_1 = sorted(
+            [f for f in os.listdir(SAVE_DIR_1) if os.path.isfile(os.path.join(SAVE_DIR_1, f))], 
+            key=lambda f: -os.path.getmtime(os.path.join(SAVE_DIR_1, f))
+        )
 
-    if not image_files_0 or not image_files_1:
+        # 파일이 하나라도 없으면 None 반환
+        if not image_files_0 or not image_files_1:
+            return None, None
+
+        img0_path = os.path.join(SAVE_DIR_0, image_files_0[0])
+        img1_path = os.path.join(SAVE_DIR_1, image_files_1[0])
+
+        # 파일 존재 여부 확인 후 반환
+        if not os.path.exists(img0_path) or not os.path.exists(img1_path):
+            return None, None
+
+        return img0_path, img1_path
+
+    except Exception as e:
+        print(f"[ERROR] get_latest_images() 오류: {e}")
         return None, None
 
-    return os.path.join(SAVE_DIR_0, image_files_0[0]), os.path.join(SAVE_DIR_1, image_files_1[0])
 
 def delete_images(img0_path, img1_path):
     """처리 완료된 이미지 삭제"""
@@ -71,12 +92,9 @@ def delete_images(img0_path, img1_path):
         os.remove(img1_path)
 
 def detect_objects(img):
-    """YOLO를 이용한 객체 탐지"""
+    """YOLO를 이용한 객체 탐지 (모든 객체 포함)"""
     results = model(img, verbose=False)
-    detected_objects = [
-        box for box in results[0].boxes if box.conf[0].item() >= 0.8
-    ]
-    return detected_objects
+    return results[0].boxes  # 모든 객체 반환 (Confidence 제한 없음)
 
 def assess_risk(distance):
     """객체의 거리 기반 위험도 평가"""
@@ -102,19 +120,17 @@ def process_images(client):
         while True:
             img0_path, img1_path = get_latest_images()
             if img0_path is None or img1_path is None:
-                sleep(1)
                 continue
 
             img_right = cv2.imread(img0_path)
             img_left = cv2.imread(img1_path)
+
             if img_right is None or img_left is None:
-                sleep(1)
                 continue
 
             detected_objects = detect_objects(img_left)
             if not detected_objects:
                 delete_images(img0_path, img1_path)
-                sleep(1)
                 continue
 
             # 심도 맵 계산
@@ -133,10 +149,11 @@ def process_images(client):
 
                 region_disp = disparity[y1:y2, x1:x2]
                 valid_disp = region_disp[np.isfinite(region_disp)]
+                
                 if valid_disp.size == 0:
                     continue
 
-                avg_disp = float(np.mean(valid_disp))
+                avg_disp = float(np.median(valid_disp))
                 distance = (B * f) / avg_disp
                 label = model.names[int(box.cls[0].item())] if hasattr(model, "names") else str(int(box.cls[0].item()))
                 risk_level = assess_risk(distance)
@@ -147,7 +164,7 @@ def process_images(client):
                     "risk_level": risk_level
                 })
 
-                print(f"Detected {label}: Distance = {round(distance, 2)} cm, Confidence = {box.conf[0].item()}")
+                print(f"Detected {label}: Distance = {round(distance, 2)} cm")
 
             if objects_data:
                 publish_message(client, PUB_TOPIC, {
@@ -156,7 +173,6 @@ def process_images(client):
                 })
 
             delete_images(img0_path, img1_path)
-            sleep(1)
 
     except KeyboardInterrupt:
         print("프로그램 종료")
