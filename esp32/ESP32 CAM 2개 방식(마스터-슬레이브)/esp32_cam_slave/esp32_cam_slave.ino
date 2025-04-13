@@ -11,9 +11,9 @@
 
 // AWS 및 MQTT 설정
 WiFiClientSecure net = WiFiClientSecure();
-MQTTClient client = MQTTClient(1024 * 30);
+MQTTClient client = MQTTClient(1024 * 35);
 
-void connectAWS() {
+void connectWiFi() {
   WiFiManager wm;
   wm.autoConnect("ESP32_Config_slave", "12345678");
 
@@ -21,7 +21,9 @@ void connectAWS() {
     delay(500);
     Serial.print(".");
   }
+}
 
+void connectAWS() {
   net.setCACert(AWS_CERT_CA);
   net.setCertificate(AWS_CERT_CRT);
   net.setPrivateKey(AWS_CERT_PRIVATE);
@@ -113,6 +115,7 @@ void grabImage() {
 void setup() {
   Serial.begin(115200);
   pinMode(TRIGGER_PIN, INPUT); // TRIGGER_PIN을 입력으로 설정
+  connectWiFi();
   cameraInit();
   connectAWS();
 }
@@ -126,7 +129,9 @@ void loop() {
     delay(100);
   }
   else if (!client.connected()) {
-    Serial.println("MQTT 연결 끊김, 재연결 시도...");
+    if(WiFi.status() != WL_CONNECTED) {
+      connectWiFi();
+    }
     connectAWS();
   }
 }
