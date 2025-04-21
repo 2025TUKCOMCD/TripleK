@@ -16,3 +16,31 @@
     <summary>2025년 1월 23일</summary> 
     09시55분. 이미지 214장 업로드, 현재 총 개수 = 214장
 </details>
+<details>
+    <summary>2025년 2월 11일</summary> 
+    16시51분. 이미지 157장 업로드, 현재 총 개수 = 371장
+</details>
+<details>
+    <summary>2025년 2월 15일</summary> 
+    20시14분. 이미지 58장 업로드, 현재 총 개수 = 429장
+</details>
+<details>
+    <summary>2025년 2월 17일</summary> 
+    00시47분. 이미지 56장 업로드, 현재 총 개수 = 485장
+</details>
+<details>
+    <summary>2025년 2월 19일</summary> 
+    19시30분. 이미지 76장 업로드, 현재 총 개수 = 561장
+</details>
+<details>
+    <summary>2025년 3월 6일</summary> 
+    17시37분. 이미지 62장 업로드, 현재 총 개수 = 623장
+</details>
+<details>
+    <summary>2025년 3월 10일</summary> 
+    17시51분. 이미지 75장 업로드, 현재 총 개수 = 698장
+</details>
+<details>
+    <summary>2025년 3월 27일</summary> 
+    23시57분. 이미지 1034장 업로드, 현재 총 개수 = 1732장 (출처: AI-Hub 인도보행 영상)
+</details>
