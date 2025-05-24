@@ -153,7 +153,7 @@ def process_images(client):
 
                 print(f"Detected {label}: Area = {area}, Proximity = {proximity}, Risk = {risk_level}, Approaching = {approaching}")
 
-            if objects_data and (risk_level == "high" or approaching == True):
+            if objects_data and (risk_level == "high" and approaching == True):
                 publish_message(client, PUB_TOPIC, {
                     "timestamp": datetime.now().isoformat(),
                     "objects": objects_data
