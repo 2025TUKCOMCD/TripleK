@@ -45,9 +45,7 @@ class MqttManager(private val context: Context) {
                                 for (i in 0 until objectsArray.length()) {
                                     val obj = objectsArray.getJSONObject(i)
                                     val label = obj.getString("label")
-                                    val distance = obj.getDouble("distance")
-                                    val riskLevel = obj.getString("risk_level")
-                                    sb.append("$label $distance $riskLevel")
+                                    sb.append("전방에 $label 접근 중")
                                     if (i < objectsArray.length() - 1) {
                                         sb.append("\n")
                                     }
