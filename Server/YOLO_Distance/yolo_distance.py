@@ -132,7 +132,7 @@ def process_images(client):
                 # 위험도 판단
                 if proximity in ["very_close", "close"] and center_region:
                     risk_level = "high"
-                elif proximity == "medium":
+                elif proximity in ["very_close", "close", "medium"]:
                     risk_level = "medium"
                 else:
                     risk_level = "low"
@@ -153,7 +153,7 @@ def process_images(client):
 
                 print(f"Detected {label}: Area = {area}, Proximity = {proximity}, Risk = {risk_level}, Approaching = {approaching}")
 
-            if objects_data:
+            if objects_data and (risk_level == "high" or approaching == True):
                 publish_message(client, PUB_TOPIC, {
                     "timestamp": datetime.now().isoformat(),
                     "objects": objects_data
