@@ -153,7 +153,8 @@ def process_images(client):
 
                 print(f"Detected {label}: Area = {area}, Proximity = {proximity}, Risk = {risk_level}, Approaching = {approaching}")
 
-            if objects_data and (risk_level == "high" and approaching == True):
+            # 중앙에서 접근 중 이거나, 중앙에서 매우 가까울 경우 mqtt 메시지 전송
+            if objects_data and ((risk_level == "high" and approaching == True) or (proximity == "very_close" and center_region)):
                 publish_message(client, PUB_TOPIC, {
                     "timestamp": datetime.now().isoformat(),
                     "objects": objects_data
