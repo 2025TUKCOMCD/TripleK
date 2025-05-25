@@ -106,8 +106,7 @@ EC2에 putty 또는 ssh로 접속하여 명령어 입력.
     topic esp32/cam_1 both 1
     topic esp32cam/processed both 1
     topic esp32cam/status both 1
-
-
+    
     # Setting protocol version explicitly
     bridge_protocol_version mqttv311
     bridge_insecure false
