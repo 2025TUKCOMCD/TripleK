@@ -1,111 +1,92 @@
 package com.example.testui
 
-import android.os.Handler
-import android.os.Looper
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.speech.tts.TextToSpeech
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.unit.dp
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.MqttCallback
+import androidx.compose.ui.unit.sp
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import java.util.Locale
 
+@SuppressLint("MissingPermission", "ObsoleteSdkInt")
 @Composable
-fun ChatBubble(message: String, isUserMessage: Boolean = false) {
-    val alignment = if (isUserMessage) Alignment.CenterEnd else Alignment.CenterStart
-    val bubbleColor = if (isUserMessage)
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-    else
-        MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        contentAlignment = alignment
-    ) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = bubbleColor
+fun MqttScreen(mqttManager: MqttManager) {
+    val context = LocalContext.current
+    var tts: TextToSpeech? by remember { mutableStateOf(null) }
+    DisposableEffect(context) {
+        tts = TextToSpeech(context) { if (it == TextToSpeech.SUCCESS) tts?.language = Locale.getDefault() }
+        onDispose { tts?.shutdown() }
+    }
+    LaunchedEffect(mqttManager.receivedMessages.size) {
+        // VIBRATE permission 체크
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) == PackageManager.PERMISSION_GRANTED) {
+            val vib = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vib.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vib.vibrate(100)
+            }
+        }
+    }
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
+        Text(
+            text = if (!mqttManager.mqttConnected) "MQTT 서버에 연결 중…" else "ESP32-CAM 연결 성공! 수신 중",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.semantics {
+                contentDescription = "MQTT 연결 상태 텍스트"
+            }
+        )
+        Spacer(Modifier.height(8.dp))
+        LazyColumn(
+            Modifier
+                .weight(1f)
+                .semantics { liveRegion = LiveRegionMode.Polite }
         ) {
-            Text(
-                text = message,
-                modifier = Modifier.padding(16.dp)
-            )
+            items(mqttManager.receivedMessages) { msg -> ChatBubble(msg) }
         }
     }
 }
 
 @Composable
-fun MqttScreen(mqttManager: MqttManager) {
-    val context = LocalContext.current
-    var ttsRate by remember { mutableStateOf(1.0f) }
-    var tts: TextToSpeech? by remember { mutableStateOf(null) }
-
-    // TTS 초기화
-    DisposableEffect(context) {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.getDefault()
-                tts?.setSpeechRate(ttsRate)
+fun ChatBubble(message: String) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .semantics {
+                contentDescription = message
+                liveRegion = LiveRegionMode.Polite
             }
-        }
-        onDispose { tts?.shutdown() }
-    }
-
-    LaunchedEffect(ttsRate) {
-        tts?.setSpeechRate(ttsRate)
-    }
-
-    if (!mqttManager.mqttConnected) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 2.dp,
+            modifier = Modifier.focusable().clickable { }
         ) {
-            Text(text = "MQTT 서버에 연결 중...\nESP32-CAM의 상태 대기 중...")
-        }
-    } else {
-        // 마지막 메시지에 대해 TTS speak 호출
-        val lastMessage = mqttManager.receivedMessages.lastOrNull()
-        LaunchedEffect(lastMessage) {
-            lastMessage?.let { msg ->
-                tts?.speak(
-                    msg,
-                    TextToSpeech.QUEUE_FLUSH, // 기존 TTS 음성을 지우고 최신 메시지로 대체
-                    null,
-                    "msg_${System.currentTimeMillis()}"
-                )
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Text(text = "ESP32-CAM 연결 성공!\n실시간 데이터를 수신 중:")
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(mqttManager.receivedMessages) { msg ->
-                    ChatBubble(message = msg)
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "TTS 배속: ${"%.1f".format(ttsRate)}")
-            Slider(
-                value = ttsRate,
-                onValueChange = { ttsRate = it },
-                valueRange = 0.5f..2.0f,
-                steps = 3,
-                modifier = Modifier.fillMaxWidth()
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 20.sp),
+                modifier = Modifier.padding(16.dp)
             )
         }
     }
