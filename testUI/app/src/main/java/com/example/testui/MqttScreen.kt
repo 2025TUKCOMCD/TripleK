@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -25,29 +24,39 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.ui.Alignment
 import java.util.*
 
 @SuppressLint("MissingPermission", "ObsoleteSdkInt")
 @Composable
 fun MqttScreen(mqttManager: MqttManager) {
     val context = LocalContext.current
+    var ttsRate by remember { mutableStateOf(2.0f) }
     var tts: TextToSpeech? by remember { mutableStateOf(null) }
 
-    // TTS 초기화 (2배속 설정)
+    // TTS 초기화 및 속도 설정
     DisposableEffect(context) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 tts?.language = Locale.getDefault()
-                tts?.setSpeechRate(2.0f)  // 2배속
+                tts?.setSpeechRate(ttsRate)
             }
         }
         onDispose { tts?.shutdown() }
     }
 
-    // 메시지 수신 시 읽기 + 진동
+    // TTS 속도 변경 시 반영
+    LaunchedEffect(ttsRate) {
+        tts?.setSpeechRate(ttsRate)
+    }
+
+    // 메시지 수신 시 TTS 읽기 + 진동
     LaunchedEffect(mqttManager.receivedMessages.size) {
         val lastMsg = mqttManager.receivedMessages.lastOrNull()
-
         lastMsg?.let {
             tts?.speak(
                 it,
@@ -70,7 +79,16 @@ fun MqttScreen(mqttManager: MqttManager) {
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                WindowInsets.statusBars
+                    .union(WindowInsets.navigationBars)
+                    .asPaddingValues()
+            )
+            .padding(16.dp)  // 기존 여백 유지
+    ) {
         Text(
             text = if (!mqttManager.mqttConnected)
                 "MQTT 서버에 연결 중…" else "ESP32-CAM 연결 성공! 수신 중",
@@ -94,6 +112,14 @@ fun MqttScreen(mqttManager: MqttManager) {
                 ChatBubble(msg)
             }
         }
+
+        Spacer(Modifier.height(16.dp))
+
+        // TTS 속도 조절 UI
+        TtsSpeedControls(ttsRate = ttsRate, onTtsRateChange = {
+            ttsRate = it
+            tts?.speak("속도 ${"%.1f".format(it)}배속", TextToSpeech.QUEUE_FLUSH, null, null)
+        })
     }
 }
 
@@ -120,6 +146,44 @@ fun ChatBubble(message: String) {
                 style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 20.sp),
                 modifier = Modifier.padding(16.dp)
             )
+        }
+    }
+}
+
+@Composable
+fun TtsSpeedControls(ttsRate: Float, onTtsRateChange: (Float) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "TTS 속도 조절"
+            },
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Button(
+            onClick = {
+                val newRate = (ttsRate - 0.5f).coerceAtLeast(0.5f)
+                onTtsRateChange(newRate)
+            },
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Text("속도 -")
+        }
+
+        Text(
+            text = "현재 속도: ${"%.1f".format(ttsRate)}배속",
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+
+        Button(
+            onClick = {
+                val newRate = (ttsRate + 0.5f).coerceAtMost(3.0f)
+                onTtsRateChange(newRate)
+            },
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Text("속도 +")
         }
     }
 }
