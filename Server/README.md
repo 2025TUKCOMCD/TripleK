@@ -102,8 +102,11 @@ EC2에 putty 또는 ssh로 접속하여 명령어 입력.
     address <AWS IoT Core ATS 엔드포인트>:8883
 
     # Specifying which topics are bridged and in what fashion
-    사용할 토픽을 topic <토픽 명> <in/out/both 중 하나> 1
-    (ex.topic cam_image both 1)
+    topic esp32/cam_0 both 1
+    topic esp32/cam_1 both 1
+    topic esp32cam/processed both 1
+    topic esp32cam/status both 1
+
 
     # Setting protocol version explicitly
     bridge_protocol_version mqttv311
