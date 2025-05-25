@@ -141,6 +141,7 @@ EC2에 putty 또는 ssh로 접속하여 명령어 입력.
     sudo apt install python3
     sudo apt install python3-pip
 
+    cd ~
     sudo apt install python3.12-venv
     python3 -m venv myenv
     source myenv/bin/activate
