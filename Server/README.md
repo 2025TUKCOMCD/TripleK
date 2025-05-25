@@ -132,3 +132,23 @@ EC2에 putty 또는 ssh로 접속하여 명령어 입력.
     #END of bridge.conf
 </details>
 </details>
+
+<details>
+    <summary>Python 설치(YOLO 실행 및 필요 패키지 설치)</summary> 
+
+    sudo apt install python3
+    sudo apt install python3-pip
+
+    sudo apt install python3.12-venv
+    python3 -m venv myenv
+    source myenv/bin/activate
+
+    pip install paho.mqtt
+    pip install Pillow
+    pip install opencv-python
+
+    sudo apt update
+    sudo apt install -y libgl1
+    pip install ultralytics
+    pip install filterpy
+</details>
