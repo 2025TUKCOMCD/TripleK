@@ -20,14 +20,12 @@ SAVE_DIR_1 = "./images_1"  # 왼쪽 카메라
 os.makedirs(SAVE_DIR_0, exist_ok=True)
 os.makedirs(SAVE_DIR_1, exist_ok=True)
 
-# YOLO 모델 로드
+# YOLO 모델 로드 (GPU 사용)
 model = YOLO("last.pt")
+model.to('cuda')
 
-# SORT 트래커
-tracker = Sort()
-
-# 이전 프레임 객체 크기 저장
-previous_areas = {}
+# SORT 트래커 초기화
+tracker = Sort(min_hits=1, max_age=5)
 
 # 클래스별 area 기반 근접 판단 임계값
 proximity_thresholds = {
@@ -44,7 +42,6 @@ proximity_thresholds = {
     "trafficlight": [1000, 2000, 4000],
     "tubular marker": [1000, 2000, 4000],
     "pillar": [1500, 3000, 6000],
-    # 기타 클래스 기본값
     "default": [2000, 5000, 10000]
 }
 
@@ -56,7 +53,6 @@ def connect_mqtt():
     return client
 
 def publish_message(client, topic, message):
-    client.publish(STATUS_TOPIC, "connected")
     client.publish(topic, json.dumps(message))
 
 def get_latest_images():
@@ -73,8 +69,8 @@ def delete_images(img0_path, img1_path):
         os.remove(img1_path)
 
 def detect_objects(img):
-    results = model(img, verbose=False)
-    return [box for box in results[0].boxes if box.conf[0].item() >= 0.8]
+    results = model(img, verbose=True)
+    return [box for box in results[0].boxes if box.conf[0].item() >= 0.65]
 
 def bbox_area(box):
     x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
@@ -92,7 +88,40 @@ def get_proximity(label, area):
         return "far"
 
 def process_images(client):
-    global previous_areas
+    previous_areas = {}  # track_id 기준으로 관리
+
+    def is_similar(box_l, box_r):
+        # 특징점 기반 매칭
+        x1_l, y1_l, x2_l, y2_l = map(int, box_l)
+        x1_r, y1_r, x2_r, y2_r = map(int, box_r)
+
+        roi_left = img_left[y1_l:y2_l, x1_l:x2_l]
+        roi_right = img_right[y1_r:y2_r, x1_r:x2_r]
+
+        if roi_left.size == 0 or roi_right.size == 0:
+            return False
+
+        try:
+            sift = cv2.SIFT_create()
+            kp1, des1 = sift.detectAndCompute(roi_left, None)
+            kp2, des2 = sift.detectAndCompute(roi_right, None)
+
+            if des1 is None or des2 is None:
+                return False
+
+            index_params = dict(algorithm=1, trees=5)  # FLANN
+            search_params = dict(checks=50)
+            flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+            matches = flann.knnMatch(des1, des2, k=2)
+
+            # Lowe's ratio test
+            good_matches = [m for m, n in matches if m.distance < 0.8 * n.distance]
+
+            return len(good_matches) >= 9  # 매칭 임계값 (조절 가능)
+
+        except cv2.error:
+            return False
 
     try:
         while True:
@@ -108,57 +137,100 @@ def process_images(client):
                 continue
 
             boxes_left = detect_objects(img_left)
+            boxes_right = detect_objects(img_right)
             h_img, w_img = img_left.shape[:2]
 
-            detections = []
+            # 왼쪽 객체들 detection (x1,y1,x2,y2,conf)
+            dets_left = []
             for box in boxes_left:
                 coords = box.xyxy[0].cpu().numpy()
-                x1, y1, x2, y2 = coords
-                detections.append([x1, y1, x2, y2, box.conf[0].item()])
+                dets_left.append([*coords, box.conf[0].item()])
+            dets_left = np.array(dets_left)
 
-            tracked_objects = tracker.update(np.array(detections))
+            # SORT 트래커로 ID 추적 (왼쪽 카메라 기준)
+            tracked_left = tracker.update(dets_left)  # [x1,y1,x2,y2,id]
+
+            # ID -> 왼쪽 박스 매핑
+            id_to_box = {}
+            for i, track in enumerate(tracked_left):
+                x1, y1, x2, y2, track_id = track
+                id_to_box[int(track_id)] = boxes_left[i]
+
+            # 오른쪽과 매칭
+            matched_pairs = []
+            for track_id, box_l in id_to_box.items():
+                label_l = model.names[int(box_l.cls[0].item())]
+                box_l_coords = box_l.xyxy[0].cpu().numpy()
+
+                for box_r in boxes_right:
+                    label_r = model.names[int(box_r.cls[0].item())]
+                    box_r_coords = box_r.xyxy[0].cpu().numpy()
+
+                    if label_l == label_r and is_similar(box_l_coords, box_r_coords):
+                        matched_pairs.append((track_id, box_l, box_r))
+                        break
+
             objects_data = []
+            for track_id, box_l, box_r in matched_pairs:
+                coords_l = box_l.xyxy[0].cpu().numpy()
+                x1_l, y1_l, x2_l, y2_l = map(int, coords_l)
+                area = bbox_area(box_l)
+                label = model.names[int(box_l.cls[0].item())]
 
-            for i, box in enumerate(boxes_left):
-                coords = box.xyxy[0].cpu().numpy()
-                x1, y1, x2, y2 = map(int, coords)
-                area = bbox_area(box)
-                label = model.names[int(box.cls[0].item())] if hasattr(model, "names") else str(int(box.cls[0].item()))
-                x_center = (x1 + x2) / 2
-                center_region = (w_img * 0.3 < x_center < w_img * 0.7)
+                coords_r = box_r.xyxy[0].cpu().numpy()
+                x1_r, y1_r, x2_r, y2_r = map(int, coords_r)
+
+                # 중앙 판단: 왼쪽 카메라에선 오른쪽 영역을, 오른쪽 카메라에선 왼쪽 영역을
+                center_region_left = x2_l > w_img * 0.6
+                center_region_right = x1_r < w_img * 0.4
+                both_center = center_region_left and center_region_right
 
                 proximity = get_proximity(label, area)
 
-                # 위험도 판단
-                if proximity in ["very_close", "close"] and center_region:
+                # 위험도 판단 (중앙에 있으면 위험도 강화)
+                if proximity in ["very_close"] or (proximity in ["close"] and both_center):
                     risk_level = "high"
-                elif proximity in ["very_close", "close", "medium"]:
+                elif proximity in ["close"] or (proximity in ["medium"] and both_center):
                     risk_level = "medium"
                 else:
                     risk_level = "low"
 
                 # 접근 여부 판단
                 approaching = False
-                if label in previous_areas:
-                    if area > previous_areas[label] * 1.2:
+                if track_id in previous_areas:
+                    if area > previous_areas[track_id] * 1.2:
                         approaching = True
-                previous_areas[label] = area
+                previous_areas[track_id] = area
+
+                if approaching:
+                    risk_levels = ["low", "medium", "high"]
+                    current_index = risk_levels.index(risk_level)
+                    if current_index < len(risk_levels) - 1:
+                        risk_level = risk_levels[current_index + 1]
 
                 objects_data.append({
+                    "id": int(track_id),
                     "label": label,
                     "approaching": approaching,
                     "proximity": proximity,
                     "risk_level": risk_level
                 })
 
-                print(f"Detected {label}: Area = {area}, Proximity = {proximity}, Risk = {risk_level}, Approaching = {approaching}")
+                print(f"Detected {label} (ID {track_id}): Area={area}, Proximity={proximity}, Risk={risk_level}, Approaching={approaching}")
 
-            # 중앙에서 접근 중 이거나, 중앙에서 매우 가까울 경우 mqtt 메시지 전송
-            if objects_data and ((risk_level == "high" and approaching == True) or (proximity == "very_close" and center_region)):
+            # 고위험 객체가 하나라도 있으면 MQTT 전송
+            should_publish = any(obj["risk_level"] == "high" for obj in objects_data)
+
+            if should_publish:
+                # 고위험 객체만 필터링
+                filtered_objects = [obj for obj in objects_data if obj["risk_level"] == "high"]
+                
                 publish_message(client, PUB_TOPIC, {
                     "timestamp": datetime.now().isoformat(),
-                    "objects": objects_data
+                    "objects": filtered_objects  # 필터된 객체만 전송
                 })
+                client.publish(STATUS_TOPIC, "connected")
+                print("MQTT 메시지 전송!\n")
 
             delete_images(img0_path, img1_path)
             sleep(1)
