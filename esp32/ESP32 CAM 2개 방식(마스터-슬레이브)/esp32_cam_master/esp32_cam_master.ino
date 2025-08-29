@@ -88,16 +88,6 @@ void cameraInit() {
   }
 }
 
-
-
-void setup() {
-  Serial.begin(115200);
-  pinMode(TRIGGER_PIN, OUTPUT); // TRIGGER_PIN을 출력으로 설정
-  digitalWrite(TRIGGER_PIN, LOW); // 초기값은 LOW로 설정
-  cameraInit();
-  connectAWS();
-}
-
 void grabImage() {
   // WiFi 상태 유지 확인
   if (WiFi.status() != WL_CONNECTED) {
@@ -118,6 +108,14 @@ void grabImage() {
     }
   }
   esp_camera_fb_return(fb);
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(TRIGGER_PIN, OUTPUT); // TRIGGER_PIN을 출력으로 설정
+  digitalWrite(TRIGGER_PIN, LOW); // 초기값은 LOW로 설정
+  cameraInit();
+  connectAWS();
 }
 
 void loop() {
