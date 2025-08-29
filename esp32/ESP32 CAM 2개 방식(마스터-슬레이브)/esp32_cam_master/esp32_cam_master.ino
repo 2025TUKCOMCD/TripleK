@@ -88,6 +88,16 @@ void cameraInit() {
   }
 }
 
+
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(TRIGGER_PIN, OUTPUT); // TRIGGER_PIN을 출력으로 설정
+  digitalWrite(TRIGGER_PIN, LOW); // 초기값은 LOW로 설정
+  cameraInit();
+  connectAWS();
+}
+
 void grabImage() {
   // WiFi 상태 유지 확인
   if (WiFi.status() != WL_CONNECTED) {
@@ -110,14 +120,6 @@ void grabImage() {
   esp_camera_fb_return(fb);
 }
 
-void setup() {
-  Serial.begin(115200);
-  pinMode(TRIGGER_PIN, OUTPUT); // TRIGGER_PIN을 출력으로 설정
-  digitalWrite(TRIGGER_PIN, LOW); // 초기값은 LOW로 설정
-  cameraInit();
-  connectAWS();
-}
-
 void loop() {
   client.loop();
 
@@ -128,9 +130,7 @@ void loop() {
     // 마스터도 이미지를 캡처하고 AWS로 전송
     grabImage();
     digitalWrite(TRIGGER_PIN, LOW);
-    delay(50);
-    
-    delay(1000); // 주기적으로 이미지를 캡처
+    delay(1050); // 주기적으로 이미지를 캡처
   }
   else if (!client.connected()) {
     Serial.println("MQTT 연결 끊김, 재연결 시도...");
