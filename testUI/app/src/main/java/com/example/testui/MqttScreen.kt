@@ -54,7 +54,7 @@ fun MqttScreen(mqttManager: MqttManager) {
         tts?.setSpeechRate(ttsRate)
     }
 
-    // 메시지 수신 시 TTS 읽기 + 진동
+    // 메시지 수신 시 TTS 읽기
     LaunchedEffect(mqttManager.receivedMessages.size) {
         val lastMsg = mqttManager.receivedMessages.lastOrNull()
         lastMsg?.let {
@@ -65,7 +65,7 @@ fun MqttScreen(mqttManager: MqttManager) {
                 "msg_${System.currentTimeMillis()}"
             )
         }
-
+        // 진동
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE)
             == PackageManager.PERMISSION_GRANTED
         ) {
