@@ -118,7 +118,7 @@ def process_images(client):
             # Lowe's ratio test
             good_matches = [m for m, n in matches if m.distance < 0.8 * n.distance]
 
-            return len(good_matches) >= 9  # 매칭 임계값 (조절 가능)
+            return len(good_matches) >= 7  # 매칭 임계값 (조절 가능)
 
         except cv2.error:
             return False
@@ -157,7 +157,7 @@ def process_images(client):
                 id_to_box[int(track_id)] = boxes_left[i]
 
             # 오른쪽과 매칭
-            matched_pairs = []
+            matched_ids = set()
             for track_id, box_l in id_to_box.items():
                 label_l = model.names[int(box_l.cls[0].item())]
                 box_l_coords = box_l.xyxy[0].cpu().numpy()
@@ -167,24 +167,25 @@ def process_images(client):
                     box_r_coords = box_r.xyxy[0].cpu().numpy()
 
                     if label_l == label_r and is_similar(box_l_coords, box_r_coords):
-                        matched_pairs.append((track_id, box_l, box_r))
+                        matched_ids.add(int(track_id))  # 매칭된 ID 저장
                         break
 
             objects_data = []
-            for track_id, box_l, box_r in matched_pairs:
+            for track_id, box_l in id_to_box.items():
                 coords_l = box_l.xyxy[0].cpu().numpy()
                 x1_l, y1_l, x2_l, y2_l = map(int, coords_l)
                 area = bbox_area(box_l)
                 label = model.names[int(box_l.cls[0].item())]
 
-                coords_r = box_r.xyxy[0].cpu().numpy()
-                x1_r, y1_r, x2_r, y2_r = map(int, coords_r)
-
-                # 중앙 판단: 왼쪽 카메라에선 오른쪽 영역을, 오른쪽 카메라에선 왼쪽 영역을
+                # 중앙 영역 판단
                 center_region_left = x2_l > w_img * 0.6
-                center_region_right = x1_r < w_img * 0.4
-                both_center = center_region_left and center_region_right
+                # 오른쪽 매칭 박스가 있으면 어드밴티지
+                if track_id in matched_ids:
+                    center_region_right = True  # 매칭되면 오른쪽 중앙 영역을 확보한 것으로 간주
+                else:
+                    center_region_right = False
 
+                both_center = center_region_left and center_region_right
                 proximity = get_proximity(label, area)
 
                 # 위험도 판단 (중앙에 있으면 위험도 강화)
