@@ -1,0 +1,191 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "3ff6d217-09cf-4a73-9409-4820419c2bcb",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Requirement already satisfied: roboflow in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (1.2.7)\n",
+      "Requirement already satisfied: certifi in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (2025.8.3)\n",
+      "Requirement already satisfied: idna==3.7 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (3.7)\n",
+      "Requirement already satisfied: cycler in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (0.12.1)\n",
+      "Requirement already satisfied: kiwisolver>=1.3.1 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (1.4.9)\n",
+      "Requirement already satisfied: matplotlib in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (3.10.6)\n",
+      "Requirement already satisfied: numpy>=1.18.5 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (2.2.6)\n",
+      "Requirement already satisfied: opencv-python-headless==4.10.0.84 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (4.10.0.84)\n",
+      "Requirement already satisfied: Pillow>=7.1.2 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (11.3.0)\n",
+      "Requirement already satisfied: pi-heif<2 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (1.1.0)\n",
+      "Requirement already satisfied: pillow-avif-plugin<2 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (1.5.2)\n",
+      "Requirement already satisfied: python-dateutil in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (2.9.0.post0)\n",
+      "Requirement already satisfied: python-dotenv in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (1.1.1)\n",
+      "Requirement already satisfied: requests in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (2.32.5)\n",
+      "Requirement already satisfied: six in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (1.17.0)\n",
+      "Requirement already satisfied: urllib3>=1.26.6 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (2.5.0)\n",
+      "Requirement already satisfied: tqdm>=4.41.0 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (4.67.1)\n",
+      "Requirement already satisfied: PyYAML>=5.3.1 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (6.0.2)\n",
+      "Requirement already satisfied: requests-toolbelt in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (1.0.0)\n",
+      "Requirement already satisfied: filetype in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from roboflow) (1.2.0)\n",
+      "Requirement already satisfied: colorama in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from tqdm>=4.41.0->roboflow) (0.4.6)\n",
+      "Requirement already satisfied: contourpy>=1.0.1 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from matplotlib->roboflow) (1.3.2)\n",
+      "Requirement already satisfied: fonttools>=4.22.0 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from matplotlib->roboflow) (4.59.2)\n",
+      "Requirement already satisfied: packaging>=20.0 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from matplotlib->roboflow) (25.0)\n",
+      "Requirement already satisfied: pyparsing>=2.3.1 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from matplotlib->roboflow) (3.2.3)\n",
+      "Requirement already satisfied: charset_normalizer<4,>=2 in c:\\users\\kimji\\anaconda3\\envs\\yolo\\lib\\site-packages (from requests->roboflow) (3.4.3)\n",
+      "loading Roboflow workspace...\n",
+      "loading Roboflow project...\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Downloading Dataset Version Zip in TripleK-Project-1 to yolov12:: 100%|███| 2102273/2102273 [01:40<00:00, 20956.42it/s]"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "\n",
+      "Extracting Dataset Version Zip to TripleK-Project-1 in yolov12:: 100%|█████████| 60564/60564 [00:27<00:00, 2188.27it/s]\n"
+     ]
+    }
+   ],
+   "source": [
+    "!pip install roboflow\n",
+    "\n",
+    "from roboflow import Roboflow\n",
+    "rf = Roboflow(api_key=\"rTpjrOnMAx7DKgWDRKHJ\")\n",
+    "project = rf.workspace(\"111-ugxls\").project(\"triplek-project-stort-bylqu\")\n",
+    "version = project.version(1)\n",
+    "dataset = version.download(\"yolov12\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "3dd97426-48eb-4228-8a06-2ba241e20206",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "PyTorch CUDA available: True\n",
+      "PyTorch version: 2.7.1+cu118\n",
+      "Ultralytics version: 8.3.195\n"
+     ]
+    }
+   ],
+   "source": [
+    "import torch\n",
+    "import ultralytics\n",
+    "\n",
+    "print(\"PyTorch CUDA available:\", torch.cuda.is_available())\n",
+    "print(\"PyTorch version:\", torch.__version__)\n",
+    "print(\"Ultralytics version:\", ultralytics.__version__)\n",
+    "torch.cuda.empty_cache()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "35279503-5e7c-4485-a98d-750bc202b4d3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from ultralytics import YOLO\n",
+    "import torch\n",
+    "import os\n",
+    "\n",
+    "# Windows에서 메모리 단편화 방지 설정\n",
+    "os.environ[\"PYTORCH_CUDA_ALLOC_CONF\"] = \"expandable_segments:True\"\n",
+    "\n",
+    "# GPU 장치 설정\n",
+    "device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\n",
+    "print(f\"Using device: {device}\")\n",
+    "\n",
+    "# YOLO 모델 로드\n",
+    "model = YOLO(\"C:/Users/kimji/YOLO/yolov12s.pt\")  # RTX 4060 Ti에 적합한 모델\n",
+    "\n",
+    "torch.cuda.empty_cache() # 실행 전 캐시 정리\n",
+    "\n",
+    "# GPU 캐시 정리 콜백 함수 정의\n",
+    "def clear_gpu_cache(trainer):\n",
+    "    torch.cuda.empty_cache()\n",
+    "    print(\"🧹 GPU 캐시 정리 완료 (에폭 종료 시점)\")\n",
+    "\n",
+    "# 콜백 함수 등록\n",
+    "model.add_callback(\"on_train_epoch_end\", clear_gpu_cache)\n",
+    "\n",
+    "# 모델 학습\n",
+    "model.train(\n",
+    "    data=\"TripleK-Project-5/data.yaml\",\n",
+    "    epochs=1000,\n",
+    "    imgsz=640,\n",
+    "    batch=16,\n",
+    "    device=device,\n",
+    "    workers=8,\n",
+    "    patience=30,\n",
+    "    save=True,\n",
+    "    save_period=10,\n",
+    "    project=\"runs/train\",\n",
+    "    name=\"yolo_opt\",\n",
+    "    pretrained=True,\n",
+    "    verbose=True,\n",
+    "    warmup_epochs=5,\n",
+    "    warmup_bias_lr=0.1,\n",
+    "    amp=True,\n",
+    "\n",
+    "    # === 정확도 향상 옵션 ===\n",
+    "    augment=True,          # 데이터 증강 사용\n",
+    "    mosaic=0.8,            # Mosaic augmentation\n",
+    "    mixup=0.3,             # MixUp augmentation\n",
+    "    copy_paste=0.1,        # Copy-Paste augmentation\n",
+    "    fliplr=0.5,            # 좌우 반전\n",
+    "    hsv_h=0.015,           # HSV hue augmentation\n",
+    "    hsv_s=0.7,             # HSV saturation augmentation\n",
+    "    hsv_v=0.4,             # HSV value augmentation\n",
+    "    label_smoothing=0.1,   # 라벨 스무딩\n",
+    "    lr0=0.005,              # 초기 학습률\n",
+    "    lrf=0.01,              # 최종 학습률\n",
+    "    optimizer=\"SGD\",      # 옵티마이저 선택\n",
+    "    freeze=3,           # 필요시 초반 레이어 freeze\n",
+    ")"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "YOLO-env",
+   "language": "python",
+   "name": "yolo"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.18"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
