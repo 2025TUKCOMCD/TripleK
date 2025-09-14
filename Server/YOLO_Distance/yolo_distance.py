@@ -21,8 +21,10 @@ os.makedirs(SAVE_DIR_0, exist_ok=True)
 os.makedirs(SAVE_DIR_1, exist_ok=True)
 
 # YOLO 모델 로드 (GPU 사용)
-model = YOLO("last.pt")
+model = YOLO("best.pt")
 model.to('cuda')
+model.model.half()
+model.fuse()
 
 # SORT 트래커 초기화
 tracker = Sort(min_hits=1, max_age=5)
@@ -34,14 +36,14 @@ proximity_thresholds = {
     "bus": [8000, 14000, 22000],
     "truck": [8000, 14000, 22000],
     "bike": [1500, 3000, 4500],
-    "bollard": [1000, 2000, 3000],
+    "bollard": [1000, 2000, 2500],
     "fireplug": [1000, 2000, 3000],
     "kickboard": [1500, 3000, 4500],
     "motorcycle": [1500, 3000, 4500],
     "trafficcone": [1000, 2000, 3000],
     "trafficlight": [1000, 2000, 3000],
     "tubular marker": [1000, 2000, 3000],
-    "pillar": [1500, 3000, 4500],
+    "pillar": [3000, 6000, 9000],
     "default": [2000, 3000, 4000]
 }
 
@@ -68,12 +70,8 @@ def delete_images(img0_path, img1_path):
     if os.path.exists(img1_path):
         os.remove(img1_path)
 
-def detect_objects(img):
-    results = model(img, verbose=True)
-    return [box for box in results[0].boxes if box.conf[0].item() >= 0.65]
-
 def bbox_area(box):
-    x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
+    x1, y1, x2, y2 = box.xyxy[0]
     return (x2 - x1) * (y2 - y1)
 
 def get_proximity(label, area):
@@ -89,9 +87,11 @@ def get_proximity(label, area):
 
 def process_images(client):
     previous_areas = {}  # track_id 기준으로 관리
+    # SIFT 대신 ORB 사용
+    orb = cv2.ORB_create(nfeatures=700)  # 특징점 최대 1000개
 
+    # 특징점 매칭 함수 수정
     def is_similar(box_l, box_r):
-        # 특징점 기반 매칭
         x1_l, y1_l, x2_l, y2_l = map(int, box_l)
         x1_r, y1_r, x2_r, y2_r = map(int, box_r)
 
@@ -101,43 +101,45 @@ def process_images(client):
         if roi_left.size == 0 or roi_right.size == 0:
             return False
 
-        try:
-            sift = cv2.SIFT_create()
-            kp1, des1 = sift.detectAndCompute(roi_left, None)
-            kp2, des2 = sift.detectAndCompute(roi_right, None)
+        kp1, des1 = orb.detectAndCompute(roi_left, None)
+        kp2, des2 = orb.detectAndCompute(roi_right, None)
 
-            if des1 is None or des2 is None:
-                return False
-
-            index_params = dict(algorithm=1, trees=5)  # FLANN
-            search_params = dict(checks=50)
-            flann = cv2.FlannBasedMatcher(index_params, search_params)
-
-            matches = flann.knnMatch(des1, des2, k=2)
-
-            # Lowe's ratio test
-            good_matches = [m for m, n in matches if m.distance < 0.8 * n.distance]
-
-            return len(good_matches) >= 7  # 매칭 임계값 (조절 가능)
-
-        except cv2.error:
+        if des1 is None or des2 is None:
             return False
+
+        # BFMatcher(Hamming) 사용
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        matches = bf.match(des1, des2)
+
+        # 매칭 거리 기준 필터링
+        good_matches = [m for m in matches if m.distance < 50]  # 임계값 조절 가능
+
+        return len(good_matches) >= 10  # 매칭 임계값
 
     try:
         while True:
             img0_path, img1_path = get_latest_images()
             if img0_path is None or img1_path is None:
-                sleep(1)
+                sleep(0.01)
                 continue
 
             img_right = cv2.imread(img0_path)
             img_left = cv2.imread(img1_path)
             if img_right is None or img_left is None:
-                sleep(1)
+                sleep(0.01)
                 continue
 
-            boxes_left = detect_objects(img_left)
-            boxes_right = detect_objects(img_right)
+            # 🔹 YOLO 예측을 두 이미지를 batch로 한 번에
+            results = model.predict(
+                [img_left, img_right],
+                conf=0.6,           # 원하는 confidence
+                verbose=True        # 로그 출력 줄이기
+            )
+
+            # 결과 분리
+            boxes_left = results[0].boxes
+            boxes_right = results[1].boxes
+
             h_img, w_img = img_left.shape[:2]
 
             # 왼쪽 객체들 detection (x1,y1,x2,y2,conf)
@@ -234,7 +236,7 @@ def process_images(client):
                 print("MQTT 메시지 전송!\n")
 
             delete_images(img0_path, img1_path)
-            sleep(1)
+            sleep(0.01)
 
     except KeyboardInterrupt:
         print("프로그램 종료")
